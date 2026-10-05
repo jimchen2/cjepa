@@ -170,3 +170,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Top-level pickle files
+*.pkl
+
+# Local models/outputs
+cjepa_predictor_only/
+
