@@ -21,6 +21,9 @@ pendulum_run/four_slots/pendulum_videosaur_4slots.pkl
 
 Then
 
+Pull the extracted thing https://huggingface.co/datasets/jimchen2/pendulum-cjepa-dataset 
+
+
 ```
 export WANDB_MODE=offline
 export PYTHONPATH=$(pwd)
