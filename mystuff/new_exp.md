@@ -26,7 +26,7 @@ export PYTHONPATH=$(pwd)
 export SLOTPATH="/home/jichen/Downloads/pendulum-cjepa-dataset/videosaur/pendulum_videosaur_4slots.pkl"
 
 python src/train/train_causalwm_from_clevrer_slot.py \
-    cache_dir="~/.stable_worldmodel" \
+    cache_dir="${HOME}/.stable_worldmodel" \
     output_model_name="pendulum_cjepa" \
     dataset_name="pendulum" \
     num_workers=4 \
@@ -40,5 +40,5 @@ python src/train/train_causalwm_from_clevrer_slot.py \
     videosaur.NUM_SLOTS=4 \
     videosaur.SLOT_DIM=128 \
     predictor.heads=8 \
-    embedding_dir=$SLOTPATH
+    embedding_dir="${SLOTPATH}"
 ```
