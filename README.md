@@ -173,3 +173,225 @@ sh script/pusht/train_cjepa_from_slot.sh
   sh scripts/clevrer/train_aloe.sh
   sh scripts/clevrer/test_aloe.sh
   ```
+
+# Dataset
+* If you are using pre-extracted slots for training C-JEPA, you can skip everything here.
+* If you are using VideoSAUR for object centric encoder (either by training yourself or downloading the checkpoint), you need to follow the instruction here to prepare the dataset.
+* If you are using SAVi for object centric encoder (either by training yourself or downloading the checkpoint), please follow the [instruction](https://github.com/pairlab/SlotFormer/blob/master/docs/data.md) in slotformer repo to setup data. Although, we only use SAVi for CLEVRER dataset, you can also use SAVi for PushT by following the similar data preparation instruction.
+* If you are testing downstream (VQA or planning), you need to prepare the dataset for evaluation. 
+
+
+## CLEVRER
+### 1. Download original data (~24G total)
+```sh
+#!/usr/bin/env bash
+
+ROOT_DIR="./clevrer_video"
+
+mkdir -p \
+  ${ROOT_DIR}/train \
+  ${ROOT_DIR}/val \
+  ${ROOT_DIR}/test
+
+echo "Downloading CLEVRER videos..."
+
+wget -nc -P ${ROOT_DIR}/train \
+  http://data.csail.mit.edu/clevrer/videos/train/video_train.zip
+
+wget -nc -P ${ROOT_DIR}/val \
+  http://data.csail.mit.edu/clevrer/videos/validation/video_validation.zip
+
+wget -nc -P ${ROOT_DIR}/test \
+  http://data.csail.mit.edu/clevrer/videos/test/video_test.zip
+
+echo "Unzipping..."
+unzip -q ${ROOT_DIR}/train/video_train.zip -d ${ROOT_DIR}/train
+unzip -q ${ROOT_DIR}/val/video_validation.zip -d ${ROOT_DIR}/val
+unzip -q ${ROOT_DIR}/test/video_test.zip -d ${ROOT_DIR}/test
+
+echo "Flattening mp4 files..."
+
+for split in train val test; do
+  find ${ROOT_DIR}/${split} -type f -name "*.mp4" -exec mv {} ${ROOT_DIR}/${split}/ \;
+  find ${ROOT_DIR}/${split} -type d ! -path ${ROOT_DIR}/${split} -exec rm -rf {} +
+done
+
+echo "Done."
+```
+
+This will give you 
+```
+ROOT_DIR/
+├── train/
+│   ├── video_00000.mp4
+│   ├── video_00001.mp4
+│   └── ...
+├── val/
+│   ├── video_10000.mp4
+│   └── ...
+└── test/
+    ├── video_15000.mp4
+    └── ...
+```
+
+### 2. Reformat CLEVRER for Stable-WorldModel
+If you are using pre-extracted slots, you can skip this step.
+This step is required for extracting slots from object-centric encoders.
+```
+% set ROOT_DIR in the file first
+python dataset/clevrer/clevrer.py
+```
+* This will create clevrer dataset under stable-wm cache directory (by calling `swm.data.utils.get_cache_dir()`) in a desired format.
+* We will use deterministic train / val  setup - your cache directory will look like
+
+```
+.stable_worldmodel
+├── clevrer_train/
+|    ├── data-00000-of-000001.arrow
+|    ├── dataset_info.json
+|    ├── state.json
+|    └── videos
+|         └──0_pixels.mp4 ...
+├── clevrer_val/
+|    ├── data-00000-of-000001.arrow
+|    ├── dataset_info.json
+|    ├── state.json
+|    └── videos
+|         └──10000_pixels.mp4 ...
+└── clevrer_test/
+     ├── data-00000-of-000001.arrow
+     ├── dataset_info.json
+     ├── state.json
+     └── videos
+          └──15000_pixels.mp4 ...
+```
+
+### 3 Prepare CLEVRER Videosaur dataset
+```
+% You don't need this if you are not running videosaur for CLEVRER.
+% set ROOT_DIR in the file first
+python dataset/clevrer/save_clevrer_webdataset_mp4.py
+```
+This will give you 
+```
+ROOT_DIR/
+├── train/
+├── val/
+├── test/
+└── clevrre_wds_mp4
+    ├── train
+    |   └── clevrer-train-000000.tar ...
+    └── val
+        └── clevrer-val-000000.tar ...
+
+```
+
+## Push-T
+
+
+### 1. Download PushT for Stable-WorldModel
+* Download `pusht_expert_{train/val}` data from [link](https://drive.google.com/drive/folders/19ST8nfhZ4rMxrTfh2kgBErCcS5Kk1o-D?usp=sharing).
+* Unzip and put them under `swm.data.utils.get_cache_dir()`. Default directory is `~/.stable_worldmodel/`. But you can put them anywhere and set the `cache_dir` argument in the file before running.
+* Do not change the folder name. This naming is required when you want to work with your own dataset: {dataset_name}_train and {dataset_name}_val. 
+
+
+This will give you
+
+```
+.stable_worldmodel
+├── pusht_expert_train/
+|    ├── data-00000-of-000001.arrow
+|    ├── dataset_info.json
+|    ├── state.json
+|    └── videos
+|         └──0_pixels.mp4 ...
+└── pusht_expert_val/
+     ├── data-00000-of-000001.arrow
+     ├── dataset_info.json
+     ├── state.json
+     └── videos
+          └──0_pixels.mp4 ...
+```
+
+### 2. Prepare PushT Videosaur dataset
+
+* Generate randomly-moving PushT data for better object-centric learning. (10000 for train, 1000 for val)
+```
+PYTHONPATH=. python dataset/pusht/pusht_all_moving_videogen.py \
+    --num_videos 11000 \
+    --output_dir my_dataset 
+```
+
+* Generate webdataset shards for VideoSAUR training
+We will mix the original videos (video_10000.mp4 - video_18684.mp4) with the 10000 randomly moving videos.
+You can set the directory paths in the file before running.
+```
+PYTHONPATH=. python dataset/pusht/save_mixed_pusht_webdataset_mp4.py
+```
+# Install
+
+We recommend using conda to set up the environment.
+
+### 1. Create and activate conda environment
+```
+conda create -n cjepa python=3.10 -y
+conda activate cjepa
+git clone https://github.com/galilai-group/cjepa.git
+cd cjepa
+```
+
+
+### 2. Install system dependencies
+
+We use ffmpeg for video processing:
+```
+conda install anaconda::ffmpeg
+```
+
+
+### 3. Install basic Python dependencies
+We recommend using `uv` to install dependencies. You can also use `pip` if you prefer.
+```
+pip install uv
+uv pip install seaborn webdataset swig einops torchcodec av accelerate tensorboard tensorboardX hickle pycocotools wget
+```
+
+### 4. Install third-party libraries
+* Every third party library should be installed under `src/third_party`. Please follow the instruction to install the library.
+* Below will install `stable-pretraining`, `stable-worldmodel` and `nerv`.
+* All third-party repositories are installed in editable mode to ensure smooth development.
+* Specific commits/tags are pinned for reproducibility.
+* The environment is tested with Python 3.10.
+
+
+
+```
+cd src/third_party
+git clone https://github.com/galilai-group/stable-pretraining.git
+cd stable-pretraining
+git checkout 92b5841
+uv pip install -e .
+
+cd ..
+git clone https://github.com/galilai-group/stable-worldmodel.git
+cd stable-worldmodel
+git checkout 221ac82  ## If it doesn't work, please see below
+uv pip install -e .
+
+
+cd ../
+git clone https://github.com/Wuziyi616/nerv.git
+cd nerv
+git checkout v0.1.0   # tested with v0.1.0 release
+uv pip install -e .
+```
+
+### 5. Stable-Worldmodel Manual Download Instruction
+
+- If git checkout doesn't work, please manually download [https://github.com/galilai-group/stable-worldmodel/tree/221ac820a1adea75bed99df45ab592bb5f42306c](https://github.com/galilai-group/stable-worldmodel/tree/221ac820a1adea75bed99df45ab592bb5f42306c) and locate under third_party folder.
+
+- If the link above also doesn't work, please download the zip file from : [https://drive.google.com/drive/folders/1Oll1ghHa8ySsGjPPTJE6o8XSG0Pvyks0?usp=sharing](https://drive.google.com/drive/folders/1Oll1ghHa8ySsGjPPTJE6o8XSG0Pvyks0?usp=sharing)
+
+Sorry for the inconvenience.
+
+
