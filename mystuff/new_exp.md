@@ -22,6 +22,7 @@ pendulum_run/four_slots/pendulum_videosaur_4slots.pkl
 Then
 
 ```
+export WANDB_MODE=offline
 export PYTHONPATH=$(pwd)
 export SLOTPATH="/home/jichen/Downloads/pendulum-cjepa-dataset/videosaur/pendulum_videosaur_4slots.pkl"
 
