@@ -30,6 +30,8 @@ pendulum_run/four_slots/pendulum_videosaur_4slots.pkl
 
 Pull the thing at https://huggingface.co/datasets/jimchen2/pendulum-cjepa-dataset
 
+Causal Jepa is at https://github.com/jimchen2/cjepa
+
 ```
 export WANDB_MODE=offline
 export PYTHONPATH=$(pwd)
