@@ -4,11 +4,10 @@ https://huggingface.co/datasets/jimchen2/pendulum-cjepa-dataset/blob/main/pendul
 
 ## Step 2: Run the Extraction through VideoSaur
 
-
+https://github.com/jimchen2/cjepa/blob/main/mystuff/extract_four.py
 
 ```
-OPENBLAS_NUM_THREADS=1 python -u pendulum_run/extract_four.py \
-  > pendulum_run/four_slots/extraction.log 2>&1
+OPENBLAS_NUM_THREADS=1 python -u pendulum_run/extract_four.py 
 ```
 
 It uses
@@ -27,11 +26,9 @@ pendulum_run/cjepa_data_root/pendulum_val/videos/*.mp4
 Output:
 pendulum_run/four_slots/pendulum_videosaur_4slots.pkl
 
-Then
-
-Pull the extracted thing https://huggingface.co/datasets/jimchen2/pendulum-cjepa-dataset 
-
 ## Step 3: Run the Training
+
+Pull the thing at https://huggingface.co/datasets/jimchen2/pendulum-cjepa-dataset
 
 ```
 export WANDB_MODE=offline
