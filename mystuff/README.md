@@ -2,7 +2,7 @@
 
 (note the frame and video length, maybe generate questions as well)
 
-https://huggingface.co/datasets/jimchen2/pendulum-cjepa-dataset/blob/main/pendulum_cjepa.py
+https://huggingface.co/datasets/jimchen2/pendulum-cjepa-160f/tree/main
 
 ## Step 2: Run the Extraction through VideoSaur
 
