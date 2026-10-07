@@ -1,5 +1,7 @@
 ## Step 1: Generate the Pendulum Dataset
 
+(note the frame and video length, maybe generate questions as well)
+
 https://huggingface.co/datasets/jimchen2/pendulum-cjepa-dataset/blob/main/pendulum_cjepa.py
 
 ## Step 2: Run the Extraction through VideoSaur
