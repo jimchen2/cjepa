@@ -8,6 +8,8 @@ https://huggingface.co/datasets/jimchen2/pendulum-cjepa-160f/tree/main
 
 (You need to train the VideoSaur first)
 
+Run pendulum and CLEVRER
+
 https://github.com/jimchen2/cjepa/blob/main/mystuff/extract_four.py
 
 ```
