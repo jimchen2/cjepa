@@ -58,7 +58,3 @@ python src/train/train_causalwm_from_clevrer_slot.py \
     predictor.heads=8 \
     embedding_dir="${SLOTPATH}"
 ```
-
-## Step 4: Test
-
-(You need to train ALOE or something to generate questions and then test)
