@@ -60,3 +60,7 @@ python src/train/train_causalwm_from_clevrer_slot.py \
     predictor.heads=8 \
     embedding_dir="${SLOTPATH}"
 ```
+
+## Step 4: Run the Testing
+
+Run through the physical simulation. Train on ALOE to answer it.
