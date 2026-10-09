@@ -6,6 +6,8 @@ https://huggingface.co/datasets/jimchen2/pendulum-cjepa-160f/tree/main
 
 ## Step 2: Run the Extraction through VideoSaur
 
+(You need to train the VideoSaur first)
+
 https://github.com/jimchen2/cjepa/blob/main/mystuff/extract_four.py
 
 ```
@@ -56,3 +58,7 @@ python src/train/train_causalwm_from_clevrer_slot.py \
     predictor.heads=8 \
     embedding_dir="${SLOTPATH}"
 ```
+
+## Step 4: Test
+
+(You need to train ALOE or something to generate questions and then test)
