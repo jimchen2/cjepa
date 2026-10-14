@@ -1,4 +1,4 @@
-## Step 1: Generate the Pendulum Dataset
+## Step 1: Generate the (Pendulum) Dataset
 
 (note the frame and video length, maybe generate questions as well)
 
