@@ -21,13 +21,7 @@ mkdir -p "$LOGS"
 train_count=$(find "$DATA/train" -maxdepth 1 -name 'pendulum-train-*.tar' | wc -l)
 val_count=$(find "$DATA/val" -maxdepth 1 -name 'pendulum-val-*.tar' | wc -l)
 
-if [ "$train_count" -ne 19 ] || [ "$val_count" -ne 5 ]; then
-  echo "Expected 19 train shards and 5 val shards; found $train_count train and $val_count val."
-  echo "Check: $DATA"
-  exit 1
-fi
-
-nohup env PYTHONPATH=. python src/third_party/videosaur/videosaur/train.py \
+env PYTHONPATH=. python src/third_party/videosaur/videosaur/train.py \
   --log-dir "$LOGS" \
   src/third_party/videosaur/configs/videosaur/clevrer_dinov2_hf.yml \
   "dataset.train_shards=$DATA/train/pendulum-train-{000000..000018}.tar" \
@@ -43,13 +37,7 @@ nohup env PYTHONPATH=. python src/third_party/videosaur/videosaur/train.py \
   dataset.train_pipeline.num_frameskip=1 \
   dataset.val_pipeline.num_frameskip=1 \
   checkpoint_every_n_steps=1000 \
-  wandb.enable=false \
-  > "$LOG" 2>&1 < /dev/null &
-
-echo $! > "$PIDFILE"
-echo "Training PID: $(cat "$PIDFILE")"
-echo "Log file: $LOG"
-echo "Run output directory: $LOGS"
+  wandb.enable=false 
 ```
 
 Checkpoints: https://huggingface.co/datasets/jimchen2/pendulum-cjepa-3k-clevrer/tree/main/videosaur-checkpoints
