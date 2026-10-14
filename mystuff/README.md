@@ -2,21 +2,20 @@
 
 https://huggingface.co/datasets/jimchen2/pendulum-cjepa-160f/tree/main
 
+Extract the shards
+
 ## Step 2: Run the Extraction through VideoSaur
 
-(You need to train the VideoSaur first, VideoSaur is unsupervised)
 
-Run pendulum and CLEVRER
+```
 
-https://github.com/jimchen2/cjepa/blob/main/mystuff/extract_four.py
+```
 
 Checkpoints: https://huggingface.co/datasets/jimchen2/pendulum-cjepa-3k-clevrer/tree/main/videosaur-checkpoints
 
 ## Step 3: Run the Training
 
 Pull the thing at https://huggingface.co/datasets/jimchen2/pendulum-cjepa-dataset
-
-Causal Jepa is at https://github.com/jimchen2/cjepa
 
 ```
 export WANDB_MODE=offline
