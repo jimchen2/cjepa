@@ -8,36 +8,6 @@ Extract the shards
 
 
 ```
-cd "$HOME/Downloads/cjepa" || exit 1
-
-DATA="$HOME/Downloads/pendulum-cjepa-3k-clevrer/wds"
-RUN="$(date +%Y%m%d-%H%M%S)"
-LOGS="$HOME/Downloads/pendulum-videosaur-logs-$RUN"
-LOG="$HOME/Downloads/videosaur-training-$RUN.log"
-PIDFILE="$HOME/Downloads/videosaur-training-$RUN.pid"
-
-mkdir -p "$LOGS"
-
-train_count=$(find "$DATA/train" -maxdepth 1 -name 'pendulum-train-*.tar' | wc -l)
-val_count=$(find "$DATA/val" -maxdepth 1 -name 'pendulum-val-*.tar' | wc -l)
-
-env PYTHONPATH=. python src/third_party/videosaur/videosaur/train.py \
-  --log-dir "$LOGS" \
-  src/third_party/videosaur/configs/videosaur/clevrer_dinov2_hf.yml \
-  "dataset.train_shards=$DATA/train/pendulum-train-{000000..000018}.tar" \
-  "dataset.val_shards=$DATA/val/pendulum-val-{000000..000004}.tar" \
-  globals.NUM_GPUS=1 \
-  globals.NUM_SLOTS=4 \
-  globals.BATCH_SIZE_PER_GPU=32 \
-  trainer.devices=1 \
-  trainer.max_steps=5000 \
-  trainer.val_check_interval=1000 \
-  dataset.val_size=600 \
-  dataset.num_val_workers=4 \
-  dataset.train_pipeline.num_frameskip=1 \
-  dataset.val_pipeline.num_frameskip=1 \
-  checkpoint_every_n_steps=1000 \
-  wandb.enable=false 
 ```
 
 Checkpoints: https://huggingface.co/datasets/jimchen2/pendulum-cjepa-3k-clevrer/tree/main/videosaur-checkpoints
