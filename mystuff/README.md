@@ -6,7 +6,7 @@ https://huggingface.co/datasets/jimchen2/pendulum-cjepa-160f/tree/main
 
 ## Step 2: Run the Extraction through VideoSaur
 
-(You need to train the VideoSaur first)
+(You need to train the VideoSaur first, VideoSaur is unsupervised)
 
 Run pendulum and CLEVRER
 
