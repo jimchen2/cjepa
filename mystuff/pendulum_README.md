@@ -8,7 +8,7 @@ https://huggingface.co/datasets/jimchen2/pendulum-cjepa-3k-new/tree/main
 ~/Downloads/pendulum-cjepa-3k-new/wds
 ```
 
-## Step 2: Run the Training and Extraction through VideoSaur
+## Step 2: Run the Training through VideoSaur
 
 ```
 conda activate cjepa
