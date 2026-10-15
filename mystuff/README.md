@@ -47,7 +47,7 @@ mkdir -p "$(dirname "$SAVE_DIR")"
 
 PYTHONPATH=. python src/third_party/slotformer/base_slots/extract_videosaur.py \
   --weight "$WEIGHT" \
-  --data_root="$HOME/.stable_worldmodel" \
+  --data_root="$HOME/Downloads/pendulum-cjepa-3k-new" \
   --save_path="$SAVE_DIR" \
   --dataset="pendulum" \
   --videosaur_config="src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml"
