@@ -6,7 +6,6 @@ Extract the shards
 
 ## Step 2: Run the Training and Extraction through VideoSaur
 
-
 ```
 conda activate cjepa
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
@@ -66,6 +65,20 @@ PYTHONPATH=. python src/third_party/slotformer/base_slots/extract_videosaur.py \
   --save_path "$SAVE_DIR" \
   --dataset pendulum \
   --videosaur_config src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml
+```
+
+Plot the Extraction
+
+```
+cd ~/Downloads/cjepa
+
+PYTHONPATH=. python \
+  ~/Downloads/pendulum-cjepa-dataset/videosaur/render_slot_overlay.py \
+  --video ~/Downloads/pendulum-cjepa-3k-new/videos/train/video_00475.mp4 \
+  --checkpoint ~/Downloads/pendulum-cjepa-3k-new/videosaur-checkpoints/videosaur_pendulum_dinov2/checkpoints/step=5000.ckpt \
+  --config ~/Downloads/cjepa/src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml \
+  --output ~/Downloads/pendulum-cjepa-dataset/videosaur/video_00475_4slot_overlay.mp4 \
+  --device cuda
 ```
 
 ## Step 3: Run the Training
