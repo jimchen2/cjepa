@@ -41,11 +41,11 @@ Generate an example video
 cd ~/Downloads/cjepa
 
 PYTHONPATH=. python \
-  ~/Downloads/pendulum-cjepa-dataset/videosaur/plot.py \
+  ~/Downloads/plot.py \
   --video ~/Downloads/pendulum-cjepa-3k-new/videos/train/video_00475.mp4 \
   --checkpoint ~/Downloads/pendulum-cjepa-3k-new/videosaur-checkpoints/videosaur_pendulum_dinov2/checkpoints/step=5000.ckpt \
   --config ~/Downloads/cjepa/src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml \
-  --output ~/Downloads/pendulum-cjepa-dataset/videosaur/video_00475_4slot_overlay.mp4 \
+  --output ~/Downloads/video_00475_4slot_overlay.mp4 \
   --device cuda
 ```
 
@@ -60,7 +60,7 @@ RAW="$HOME/Downloads/pendulum-cjepa-3k-new"
 ROOT="$HOME/.stable_worldmodel"
 
 export WEIGHT="$RAW/videosaur-checkpoints/videosaur_pendulum_dinov2/checkpoints/step=5000.ckpt"
-export SAVE_DIR="$HOME/Downloads/pendulum-cjepa-dataset/videosaur/pendulum_videosaur_4slots.pkl"
+export SAVE_DIR="$HOME/Downloads/pendulum_videosaur_4slots.pkl"
 
 # Make the directory layout expected by extract_videosaur.py.
 mkdir -p \
