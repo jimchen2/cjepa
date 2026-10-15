@@ -40,6 +40,10 @@ Training Checkpoints: https://huggingface.co/datasets/jimchen2/pendulum-cjepa-3k
 Extraction
 
 ```
+conda activate cjepa
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+
+
 RAW="$HOME/Downloads/pendulum-cjepa-3k-new"
 ROOT="$HOME/.stable_worldmodel"
 
@@ -53,11 +57,6 @@ mkdir -p \
 
 ln -sfn "$RAW/videos/train" "$ROOT/pendulum_train/videos"
 ln -sfn "$RAW/videos/val" "$ROOT/pendulum_val/videos"
-
-# Basic checks before the long extraction run.
-test -f "$WEIGHT"
-find "$ROOT/pendulum_train/videos" -maxdepth 1 -name '*.mp4' | wc -l
-find "$ROOT/pendulum_val/videos" -maxdepth 1 -name '*.mp4' | wc -l
 
 mkdir -p "$(dirname "$SAVE_DIR")"
 
