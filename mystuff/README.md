@@ -39,8 +39,6 @@ Checkpoints: https://huggingface.co/datasets/jimchen2/pendulum-cjepa-3k-clevrer/
 
 ## Step 3: Run the Training
 
-Pull the thing at https://huggingface.co/datasets/jimchen2/pendulum-cjepa-dataset
-
 ```
 export WANDB_MODE=offline
 export PYTHONPATH=$(pwd)
