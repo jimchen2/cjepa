@@ -73,7 +73,7 @@ Plot the Extraction
 cd ~/Downloads/cjepa
 
 PYTHONPATH=. python \
-  ~/Downloads/pendulum-cjepa-dataset/videosaur/render_slot_overlay.py \
+  ~/Downloads/pendulum-cjepa-dataset/videosaur/plot.py \
   --video ~/Downloads/pendulum-cjepa-3k-new/videos/train/video_00475.mp4 \
   --checkpoint ~/Downloads/pendulum-cjepa-3k-new/videosaur-checkpoints/videosaur_pendulum_dinov2/checkpoints/step=5000.ckpt \
   --config ~/Downloads/cjepa/src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml \
