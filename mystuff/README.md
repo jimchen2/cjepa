@@ -13,7 +13,7 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/
 
 cd "$HOME/Downloads/cjepa" || exit 1
 
-DATA="$HOME/Downloads/pendulum-cjepa-3k-clevrer/wds"
+DATA="$HOME/Downloads/pendulum-cjepa-3k-new/wds"
 RUN="$(date +%Y%m%d-%H%M%S)"
 LOGS="$HOME/Downloads/pendulum-videosaur-logs-$RUN"
 LOG="$HOME/Downloads/videosaur-training-$RUN.log"
