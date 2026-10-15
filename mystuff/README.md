@@ -40,17 +40,33 @@ Training Checkpoints: https://huggingface.co/datasets/jimchen2/pendulum-cjepa-3k
 Extraction
 
 ```
-export WEIGHT="$HOME/Downloads/pendulum-cjepa-3k-clevrer/videosaur-checkpoints/videosaur_pendulum_dinov2/checkpoints/step=5000.ckpt"
+RAW="$HOME/Downloads/pendulum-cjepa-3k-new"
+ROOT="$HOME/.stable_worldmodel"
+
+export WEIGHT="$RAW/videosaur-checkpoints/videosaur_pendulum_dinov2/checkpoints/step=5000.ckpt"
 export SAVE_DIR="$HOME/Downloads/pendulum-cjepa-dataset/videosaur/pendulum_videosaur_4slots.pkl"
+
+# Make the directory layout expected by extract_videosaur.py.
+mkdir -p \
+  "$ROOT/pendulum_train" \
+  "$ROOT/pendulum_val"
+
+ln -sfn "$RAW/videos/train" "$ROOT/pendulum_train/videos"
+ln -sfn "$RAW/videos/val" "$ROOT/pendulum_val/videos"
+
+# Basic checks before the long extraction run.
+test -f "$WEIGHT"
+find "$ROOT/pendulum_train/videos" -maxdepth 1 -name '*.mp4' | wc -l
+find "$ROOT/pendulum_val/videos" -maxdepth 1 -name '*.mp4' | wc -l
 
 mkdir -p "$(dirname "$SAVE_DIR")"
 
 PYTHONPATH=. python src/third_party/slotformer/base_slots/extract_videosaur.py \
   --weight "$WEIGHT" \
-  --data_root="$HOME/Downloads/pendulum-cjepa-3k-new" \
-  --save_path="$SAVE_DIR" \
-  --dataset="pendulum" \
-  --videosaur_config="src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml"
+  --data_root "$ROOT" \
+  --save_path "$SAVE_DIR" \
+  --dataset pendulum \
+  --videosaur_config src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml
 ```
 
 ## Step 3: Run the Training
