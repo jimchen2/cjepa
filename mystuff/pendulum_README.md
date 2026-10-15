@@ -40,6 +40,8 @@ tail -f "$LOG"
 
 Training Checkpoints: https://huggingface.co/datasets/jimchen2/pendulum-cjepa-3k-clevrer/tree/main/videosaur-checkpoints
 
+## Step 3: Run the Extraction
+
 Generate an example video
 
 ```
