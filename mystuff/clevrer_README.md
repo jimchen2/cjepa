@@ -49,17 +49,18 @@ val_max=$(printf "%06d" $(($(find "$DATA/val" -maxdepth 1 -name 'clevrer-val-*.t
 
 cd ~/Downloads/cjepa
 
-nohup env PYTHONPATH=. CUDA_VISIBLE_DEVICES=0 NCCL_NVLS_ENABLE=0 python src/third_party/videosaur/videosaur/train.py \
-  --log-dir "$LOGS" \
+tmux new -d -s "train" \
+"env PYTHONPATH=. CUDA_VISIBLE_DEVICES=0 NCCL_NVLS_ENABLE=0 python src/third_party/videosaur/videosaur/train.py \
+  --log-dir '$LOGS' \
   src/third_party/videosaur/configs/videosaur/clevrer_dinov2_hf.yml \
-  "dataset.train_shards=$DATA/train/clevrer-train-{000000..$train_max}.tar" \
-  "dataset.val_shards=$DATA/val/clevrer-val-{000000..$val_max}.tar" \
-  "globals.BATCH_SIZE_PER_GPU=128" \
-  "dataset.num_workers=32" \
-  > "$LOG" 2>&1 &
-echo $! > "$PIDFILE"
+  'dataset.train_shards=$DATA/train/clevrer-train-{000000..$train_max}.tar' \
+  'dataset.val_shards=$DATA/val/clevrer-val-{000000..$val_max}.tar' \
+  'globals.BATCH_SIZE_PER_GPU=128' \
+  'dataset.num_workers=16'; exec bash" \; \
+  pipe-pane -o "cat >> $LOG" \; \
+  attach
 
-tail -f "$LOG"
+tmux a -t train
 ```
 
 Checkpoint: https://huggingface.co/HazelNam/CJEPA/blob/main/clevrer_videosaur_model.ckpt
