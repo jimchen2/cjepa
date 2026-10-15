@@ -2,7 +2,6 @@
 
 https://huggingface.co/datasets/jimchen2/pendulum-cjepa-160f/tree/main
 
-Extract the shards
 
 ## Step 2: Run the Training and Extraction through VideoSaur
 
