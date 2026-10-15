@@ -135,9 +135,10 @@ def process_videosaur(model, params, args):
     chunk_len = None  # getattr(params, 'input_frames', None)
 
     # gather file lists
-    train_set = sorted(glob.glob(os.path.join(args.data_root, "videos", "train", "*.mp4")))
-    val_set = sorted(glob.glob(os.path.join(args.data_root, "videos", "val", "*.mp4")))
-    test_set = sorted(glob.glob(os.path.join(args.data_root, "videos", "test", "*.mp4")))    # also extract test_set for CLEVRER
+    train_set = glob.glob(os.path.join(args.data_root, f"{args.dataset}_train/videos/*.mp4"))
+    val_set = glob.glob(os.path.join(args.data_root, f"{args.dataset}_val/videos/*.mp4"))
+    test_set = glob.glob(os.path.join(args.data_root, f"{args.dataset}_test/videos/*.mp4")) 
+    # also extract test_set for CLEVRER
     test_slots = None
     if len(test_set) > 0:
         print(f'Processing {params.dataset} video test set...')
