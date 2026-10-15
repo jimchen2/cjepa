@@ -35,6 +35,20 @@ tail -f "$LOG"
 
 Training Checkpoints: https://huggingface.co/datasets/jimchen2/pendulum-cjepa-3k-clevrer/tree/main/videosaur-checkpoints
 
+Generate an example video
+
+```
+cd ~/Downloads/cjepa
+
+PYTHONPATH=. python \
+  ~/Downloads/pendulum-cjepa-dataset/videosaur/plot.py \
+  --video ~/Downloads/pendulum-cjepa-3k-new/videos/train/video_00475.mp4 \
+  --checkpoint ~/Downloads/pendulum-cjepa-3k-new/videosaur-checkpoints/videosaur_pendulum_dinov2/checkpoints/step=5000.ckpt \
+  --config ~/Downloads/cjepa/src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml \
+  --output ~/Downloads/pendulum-cjepa-dataset/videosaur/video_00475_4slot_overlay.mp4 \
+  --device cuda
+```
+
 Extraction
 
 ```
@@ -66,20 +80,7 @@ PYTHONPATH=. python src/third_party/slotformer/base_slots/extract_videosaur.py \
   --videosaur_config src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml
 ```
 
-Plot the Extraction
-
-```
-cd ~/Downloads/cjepa
-
-PYTHONPATH=. python \
-  ~/Downloads/pendulum-cjepa-dataset/videosaur/plot.py \
-  --video ~/Downloads/pendulum-cjepa-3k-new/videos/train/video_00475.mp4 \
-  --checkpoint ~/Downloads/pendulum-cjepa-3k-new/videosaur-checkpoints/videosaur_pendulum_dinov2/checkpoints/step=5000.ckpt \
-  --config ~/Downloads/cjepa/src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml \
-  --output ~/Downloads/pendulum-cjepa-dataset/videosaur/video_00475_4slot_overlay.mp4 \
-  --device cuda
-```
-
+<!-- 
 ## Step 3: Run the Training
 
 ```
@@ -107,4 +108,4 @@ python src/train/train_causalwm_from_clevrer_slot.py \
 
 ## Step 4: Run the Testing
 
-Run through the physical simulation. Train on ALOE to answer it.
+Run through the physical simulation. Train on ALOE to answer it. -->
