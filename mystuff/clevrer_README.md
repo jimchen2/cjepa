@@ -63,7 +63,7 @@ tmux new -d -s "train" \
 tmux a -t train
 ```
 
-Checkpoint: https://huggingface.co/HazelNam/CJEPA/blob/main/clevrer_videosaur_model.ckpt
+Checkpoint: https://huggingface.co/jimchen2/clevrer_dinov2_checkpoint/blob/main/checkpoints/step%3D43000.ckpt
 
 ## Step 4: Extract
 
