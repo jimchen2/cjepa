@@ -1,16 +1,15 @@
-import math
 from collections.abc import Sequence
 from functools import partial
+import math
 from typing import Dict, Optional
 
 import einops
-import numpy as np
-import torch
 from einops.layers.torch import Rearrange
+import numpy as np
+from src.third_party.videosaur.videosaur.data import transforms_video
+import torch
 from torchvision import transforms as tvt
 from torchvision.transforms import functional as tvt_functional
-
-from src.third_party.videosaur.videosaur.data import transforms_video
 
 IMAGENET_DEFAULT_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_DEFAULT_STD = [0.229, 0.224, 0.225]
@@ -25,7 +24,8 @@ DATASET_TYPES = {
     "movi": "video",
     "clevrer": "video",
     "pusht": "video",
-    "phyre" : "video",
+    "phyre": "video",
+    "pendulum": "video",
     "dummy": "video",
     "dummyimage": "image",
 }
@@ -76,7 +76,9 @@ def build(config):
                 "central",
                 "short_side_resize_central",
             ], f"Only central crops are supported for {split}."
-            assert h_flip_prob is None, f"Horizontal flips are not supported for {split}."
+            assert (
+                h_flip_prob is None
+            ), f"Horizontal flips are not supported for {split}."
             resize_segmentation = CropResize(
                 dataset_type=dataset_type,
                 crop_type=crop_type,
@@ -89,11 +91,15 @@ def build(config):
 
     if use_movi_normalization:
         normalize = Normalize(
-            dataset_type=dataset_type, mean=MOVI_DEFAULT_MEAN, std=MOVI_DEFAULT_STD
+            dataset_type=dataset_type,
+            mean=MOVI_DEFAULT_MEAN,
+            std=MOVI_DEFAULT_STD,
         )
     else:
         normalize = Normalize(
-            dataset_type=dataset_type, mean=IMAGENET_DEFAULT_MEAN, std=IMAGENET_DEFAULT_STD
+            dataset_type=dataset_type,
+            mean=IMAGENET_DEFAULT_MEAN,
+            std=IMAGENET_DEFAULT_STD,
         )
     input_transform = tvt.Compose(
         [
@@ -131,7 +137,7 @@ def build(config):
             transforms["segmentations"] = segmentation_transformation
 
     # just copy from movi for now
-    elif dataset == "clevrer" or dataset == "pusht" or dataset=="phyre":
+    elif dataset in ["clevrer", "pusht", "phyre", "pendulum"]:
         if "target_size" in config:
             target_size = _to_2tuple(config.target_size)
             transforms[f"target_{transform_type}"] = tvt.Compose(
@@ -146,31 +152,44 @@ def build(config):
 
     elif dataset == "davis":
         if "target_size" in config:
-            raise NotImplementedError("Separate targets not implemented for transform `davis`")
+            raise NotImplementedError(
+                "Separate targets not implemented for transform `davis`"
+            )
         if split == "val" and use_segmentations:
             transforms["segmentations"] = tvt.Compose(
                 [
                     ToTensorMask(),
-                    DenseToOneHotMask(num_classes=config.num_classes, remove_zero_masks=True),
+                    DenseToOneHotMask(
+                        num_classes=config.num_classes, remove_zero_masks=True
+                    ),
                     resize_segmentation,
                 ]
             )
     elif dataset == "coco":
         if "target_size" in config:
-            raise NotImplementedError("Separate targets not implemented for transform `coco`")
+            raise NotImplementedError(
+                "Separate targets not implemented for transform `coco`"
+            )
         if split == "val" and use_segmentations:
             transforms["segmentations"] = tvt.Compose(
-                [COCOToBinary(num_classes=config.num_classes), resize_segmentation]
+                [
+                    COCOToBinary(num_classes=config.num_classes),
+                    resize_segmentation,
+                ]
             )
     elif dataset == "ytvis":
         if "target_size" in config:
-            raise NotImplementedError("Separate targets not implemented for transform `ytvis`")
+            raise NotImplementedError(
+                "Separate targets not implemented for transform `ytvis`"
+            )
 
         if split == "val" and use_segmentations:
             transforms["segmentations"] = tvt.Compose(
-                [YTVISToBinary(num_classes=config.num_classes), resize_segmentation]
+                [
+                    YTVISToBinary(num_classes=config.num_classes),
+                    resize_segmentation,
+                ]
             )
-
 
     elif dataset == "dummy" or dataset == "dummyimage":
         if transform_type == "image":
@@ -207,7 +226,9 @@ def build(config):
         if dataset_type == "video":
             transforms[transform_type].transforms.append(CFHWToFCHWFormat())
             if f"target_{transform_type}" in transforms:
-                transforms[f"target_{transform_type}"].transforms.append(CFHWToFCHWFormat())
+                transforms[f"target_{transform_type}"].transforms.append(
+                    CFHWToFCHWFormat()
+                )
 
         # We transform image-video datasets as one frame video
         # So need to remove first dimension in the end
@@ -218,30 +239,35 @@ def build(config):
 
     return transforms
 
+
 def build_inference_transform(config):
     """Builds the transform for inference.
-    
+
     Modity if needed to match the preprocessing needed for your video.
     """
     use_movi_normalization = config.get("use_movi_normalization", True)
     size = config.get("input_size", 224)
     dataset_type = config.get("dataset_type", "video")
-    
+
     resize_input = CropResize(
-            dataset_type=dataset_type,
-            crop_type="central",
-            size=size,
-            resize_mode="bilinear",
-            clamp_zero_one=False,
-        )
+        dataset_type=dataset_type,
+        crop_type="central",
+        size=size,
+        resize_mode="bilinear",
+        clamp_zero_one=False,
+    )
 
     if use_movi_normalization:
         normalize = Normalize(
-            dataset_type=dataset_type, mean=MOVI_DEFAULT_MEAN, std=MOVI_DEFAULT_STD
+            dataset_type=dataset_type,
+            mean=MOVI_DEFAULT_MEAN,
+            std=MOVI_DEFAULT_STD,
         )
     else:
         normalize = Normalize(
-            dataset_type=dataset_type, mean=IMAGENET_DEFAULT_MEAN, std=IMAGENET_DEFAULT_STD
+            dataset_type=dataset_type,
+            mean=IMAGENET_DEFAULT_MEAN,
+            std=IMAGENET_DEFAULT_STD,
         )
     input_transform = tvt.Compose(
         [
@@ -249,7 +275,7 @@ def build_inference_transform(config):
             normalize,
         ]
     )
-    return  input_transform
+    return input_transform
 
 
 def _to_2tuple(val):
@@ -262,11 +288,13 @@ def _to_2tuple(val):
 
 
 class CFHWToFCHWFormat:
+
     def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
         return torch.permute(tensor, dims=(1, 0, 2, 3))
 
 
 class ToTensorInput:
+
     def __init__(self, dataset_type) -> None:
         self.dataset_type = dataset_type
         if dataset_type == "video":
@@ -277,9 +305,12 @@ class ToTensorInput:
         if self.dataset_type == "video":
             tensor = self.to_cfhw_tensor(tensor)
         elif self.dataset_type == "image":
-            tensor = tvt_functional.convert_image_dtype(tensor, dtype=torch.float)
+            tensor = tvt_functional.convert_image_dtype(
+                tensor, dtype=torch.float
+            )
             tensor = einops.rearrange(tensor, "h w c -> c h w")
         return tensor
+
 
 # Note : not recommended. Use temporal_subsample_keys from pipelines.py instead
 # class TemporalSubsample:
@@ -304,6 +335,7 @@ class ToTensorInput:
 
 
 class Normalize:
+
     def __init__(self, dataset_type: str, mean, std):
         print(dataset_type)
         if dataset_type == "image":
@@ -337,6 +369,7 @@ class RandomHorizontalFlip:
 
 
 class CropResize:
+
     def __init__(
         self,
         dataset_type: str,
@@ -369,13 +402,17 @@ class CropResize:
         if clamp_zero_one and crop_type == "random" and resize_mode == "bicubic":
             # we clamp here only random crops
             # because central are already croped in Resize
-            self.crop_resize = tvt.Compose([self.crop_resize, partial(torch.clamp, min=0, max=1)])
+            self.crop_resize = tvt.Compose(
+                [self.crop_resize, partial(torch.clamp, min=0, max=1)]
+            )
 
     def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
         return self.crop_resize(tensor)
 
 
-def get_image_crop_resize(crop_type, crop_params, size, resize_mode, clamp_zero_one):
+def get_image_crop_resize(
+    crop_type, crop_params, size, resize_mode, clamp_zero_one
+):
     if crop_type == "short_side_resize_random":
         short_side_resize = Resize(
             size,
@@ -391,7 +428,10 @@ def get_image_crop_resize(crop_type, crop_params, size, resize_mode, clamp_zero_
         return tvt.Compose([central_crop, resize])
     elif crop_type == "short_side_resize_central":
         short_side_resize = Resize(
-            size, resize_mode, clamp_zero_one=clamp_zero_one, short_side_scale=True
+            size,
+            resize_mode,
+            clamp_zero_one=clamp_zero_one,
+            short_side_scale=True,
         )
         central_crop = CenterFullCrop()
         return tvt.Compose([short_side_resize, central_crop])
@@ -405,7 +445,9 @@ def get_image_crop_resize(crop_type, crop_params, size, resize_mode, clamp_zero_
         ValueError(f"Not valid crop_type {crop_type}")
 
 
-def get_video_crop_resize(crop_type, crop_params, size, resize_mode, clamp_zero_one):
+def get_video_crop_resize(
+    crop_type, crop_params, size, resize_mode, clamp_zero_one
+):
     if crop_type == "central":
         central_crop = transforms_video.CenterFullCropVideo()
         resize = Resize(size, resize_mode, clamp_zero_one=clamp_zero_one)
@@ -444,6 +486,7 @@ def get_video_crop_resize(crop_type, crop_params, size, resize_mode, clamp_zero_
 
 
 class Resize:
+
     def __init__(
         self,
         size: int,
@@ -477,7 +520,9 @@ class Resize:
         if self.short_side_scale:
             tensor = self.scale_short_side(tensor)
         else:
-            tensor = torch.nn.functional.interpolate(tensor, size=self.size, mode=self.mode)
+            tensor = torch.nn.functional.interpolate(
+                tensor, size=self.size, mode=self.mode
+            )
         if self.clamp_zero_one and self.mode == "bicubic":
             tensor = torch.clamp(tensor, min=0, max=1)
         if is_bool:
@@ -506,10 +551,13 @@ class Resize:
             new_h = self.size
             new_w = int(math.floor((float(w) / h) * self.size))
 
-        return torch.nn.functional.interpolate(tensor, size=(new_h, new_w), mode=self.mode)
+        return torch.nn.functional.interpolate(
+            tensor, size=(new_h, new_w), mode=self.mode
+        )
 
 
 class CenterFullCrop:
+
     def __call__(self, img):
         """
         Args:
@@ -574,10 +622,14 @@ class DenseToOneHotMask:
 
     def __call__(self, mask: torch.Tensor):
         if self.remove_zero_masks:
-            mask_oh = torch.nn.functional.one_hot(mask.to(torch.long), self.num_classes + 1)
+            mask_oh = torch.nn.functional.one_hot(
+                mask.to(torch.long), self.num_classes + 1
+            )
             mask_oh = mask_oh[..., 1:]
         else:
-            mask_oh = torch.nn.functional.one_hot(mask.to(torch.long), self.num_classes)
+            mask_oh = torch.nn.functional.one_hot(
+                mask.to(torch.long), self.num_classes
+            )
         if mask_oh.dim() == 3:
             mask_oh = einops.rearrange(mask_oh, "h w i -> i h w")
         elif mask_oh.dim() == 4:
@@ -593,7 +645,12 @@ class Denormalize:
     as we apply Denormalize after switch from CFHW to FCHW.
     """
 
-    def __init__(self, input_type, mean=IMAGENET_DEFAULT_MEAN, std=IMAGENET_DEFAULT_STD) -> None:
+    def __init__(
+        self,
+        input_type,
+        mean=IMAGENET_DEFAULT_MEAN,
+        std=IMAGENET_DEFAULT_STD,
+    ) -> None:
         if input_type == "video":
             denormalize = transforms_video.DenormalizeVideo(mean=mean, std=std)
             self.denormalize = tvt.Compose(
@@ -612,6 +669,7 @@ class Denormalize:
 
 
 class DenormalizeImage(tvt.Normalize):
+
     def __init__(self, mean, std):
         new_mean = [-m / s for m, s in zip(mean, std)]
         new_std = [1 / s for s in std]
