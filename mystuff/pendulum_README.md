@@ -52,14 +52,15 @@ train_count=$(find "$DATA/train" -maxdepth 1 -name 'pendulum-train-*.tar' | wc -
 val_count=$(find "$DATA/val" -maxdepth 1 -name 'pendulum-val-*.tar' | wc -l)
 
 tmux new -d -s "train" \
-"env PYTHONPATH=. CUDA_VISIBLE_DEVICES=0 NCCL_NVLS_ENABLE=0 python src/third_party/videosaur/videosaur/train.py \
+"env PYTHONPATH=. LD_LIBRARY_PATH=$LD_LIBRARY_PATH CUDA_VISIBLE_DEVICES=0 NCCL_NVLS_ENABLE=0 $CONDA_PREFIX/bin/python src/third_party/videosaur/videosaur/train.py \
   --log-dir '$MODEL' \
   src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml \
-  'dataset.train_shards=$DATA/train/pendulum-train-{000000..000018}.tar' \
-  'dataset.val_shards=$DATA/val/pendulum-val-{000000..000004}.tar' \
+  'dataset.train_shards=$DATA/train/pendulum-train-{000000..$train_max}.tar' \
+  'dataset.val_shards=$DATA/val/pendulum-val-{000000..$val_max}.tar' \
   'dataset.num_val_workers=5'; exec bash" \; \
   pipe-pane -o "cat >> $LOG" \; \
   attach
+
 tmux a -t train
 ```
 
