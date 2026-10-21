@@ -51,13 +51,16 @@ mkdir -p "$MODEL" "$OUT/logs"
 train_count=$(find "$DATA/train" -maxdepth 1 -name 'pendulum-train-*.tar' | wc -l)
 val_count=$(find "$DATA/val" -maxdepth 1 -name 'pendulum-val-*.tar' | wc -l)
 
-tmux new -s train_session
-PYTHONPATH=. CUDA_VISIBLE_DEVICES=0 NCCL_NVLS_ENABLE=0 python src/third_party/videosaur/videosaur/train.py \
-  --log-dir "$MODEL" \
+tmux new -d -s "train" \
+"env PYTHONPATH=. CUDA_VISIBLE_DEVICES=0 NCCL_NVLS_ENABLE=0 python src/third_party/videosaur/videosaur/train.py \
+  --log-dir '$MODEL' \
   src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml \
-  "dataset.train_shards=$DATA/train/pendulum-train-{000000..000018}.tar" \
-  "dataset.val_shards=$DATA/val/pendulum-val-{000000..000004}.tar" "dataset.num_val_workers=5" \
-  2>&1 | tee "$LOG"
+  'dataset.train_shards=$DATA/train/pendulum-train-{000000..000018}.tar' \
+  'dataset.val_shards=$DATA/val/pendulum-val-{000000..000004}.tar' \
+  'dataset.num_val_workers=5'; exec bash" \; \
+  pipe-pane -o "cat >> $LOG" \; \
+  attach
+tmux a -t train
 ```
 
 Training Checkpoints: https://huggingface.co/datasets/jimchen2/pendulum-cjepa-3k-clevrer/tree/main/videosaur-checkpoints
