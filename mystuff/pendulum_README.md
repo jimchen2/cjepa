@@ -1,6 +1,29 @@
+## Output layout
+
+Everything generated below goes under `~/Downloads/pendulum_output/` — nothing is dumped directly in `~/Downloads`:
+
+```
+~/Downloads/pendulum_output/
+├── model/
+│   └── pendulum-videosaur-<RUN>/               # Step 2 VideoSaur --log-dir
+│       └── videosaur_pendulum/<timestamp>_pendulum_dinov2/
+│           └── checkpoints/, metrics/, tb/, settings.yaml
+├── logs/
+│   └── videosaur-training-<RUN>.log, videosaur-training-<RUN>.pid
+├── extraction/
+│   └── pendulum_videosaur_4slots*.pkl          # Step 3 extracted slots
+└── examples/
+    └── video_00475_4slot_overlay.mp4           # Step 3 example video
+```
+
+Inputs that stay where they are: the repo (`~/Downloads/cjepa`), the Hugging Face dataset (`~/Downloads/pendulum-cjepa-3k-new`, incl. its published checkpoints) and the extraction `--data_root` (`~/.stable_worldmodel`).
+Each step sets `OUT` again so the blocks can be run independently.
+
 ## Step 1: Generate the (Pendulum) Dataset
 
 https://huggingface.co/datasets/jimchen2/pendulum-cjepa-3k-new/tree/main
+
+Input dataset, expected at:
 
 ```
 ~/Downloads/pendulum-cjepa-3k-new/videos/train
@@ -16,19 +39,20 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/
 
 cd "$HOME/Downloads/cjepa" || exit 1
 
+OUT="$HOME/Downloads/pendulum_output"
 DATA="$HOME/Downloads/pendulum-cjepa-3k-new/wds"
 RUN="$(date +%Y%m%d-%H%M%S)"
-LOGS="$HOME/Downloads/pendulum-videosaur-logs-$RUN"
-LOG="$HOME/Downloads/videosaur-training-$RUN.log"
-PIDFILE="$HOME/Downloads/videosaur-training-$RUN.pid"
+MODEL="$OUT/model/pendulum-videosaur-$RUN"
+LOG="$OUT/logs/videosaur-training-$RUN.log"
+PIDFILE="$OUT/logs/videosaur-training-$RUN.pid"
 
-mkdir -p "$LOGS"
+mkdir -p "$MODEL" "$OUT/logs"
 
 train_count=$(find "$DATA/train" -maxdepth 1 -name 'pendulum-train-*.tar' | wc -l)
 val_count=$(find "$DATA/val" -maxdepth 1 -name 'pendulum-val-*.tar' | wc -l)
 
 nohup env PYTHONPATH=. CUDA_VISIBLE_DEVICES=0 NCCL_NVLS_ENABLE=0 python src/third_party/videosaur/videosaur/train.py \
-  --log-dir "$LOGS" \
+  --log-dir "$MODEL" \
   src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml \
   "dataset.train_shards=$DATA/train/pendulum-train-{000000..000018}.tar" \
   "dataset.val_shards=$DATA/val/pendulum-val-{000000..000004}.tar" "dataset.num_val_workers=5"  \
@@ -47,12 +71,15 @@ Generate an example video
 ```
 cd ~/Downloads/cjepa
 
+OUT="$HOME/Downloads/pendulum_output"
+mkdir -p "$OUT/examples"
+
 PYTHONPATH=. python \
-  ~/Downloads/pendulum_plot.py \
+  mystuff/extraction_reports/pendulum_plot.py \
   --video ~/Downloads/pendulum-cjepa-3k-new/videos/train/video_00475.mp4 \
   --checkpoint ~/Downloads/pendulum-cjepa-3k-new/videosaur-checkpoints/videosaur_pendulum_dinov2/checkpoints/step=5000.ckpt \
   --config ~/Downloads/cjepa/src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml \
-  --output ~/Downloads/video_00475_4slot_overlay.mp4 \
+  --output "$OUT/examples/video_00475_4slot_overlay.mp4" \
   --device cuda
 ```
 
@@ -62,12 +89,12 @@ Extraction
 conda activate cjepa
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 
-
+OUT="$HOME/Downloads/pendulum_output"
 RAW="$HOME/Downloads/pendulum-cjepa-3k-new"
 ROOT="$HOME/.stable_worldmodel"
 
 export WEIGHT="$RAW/videosaur-checkpoints/videosaur_pendulum_dinov2/checkpoints/step=5000.ckpt"
-export SAVE_DIR="$HOME/Downloads/pendulum_videosaur_4slots.pkl"
+export SAVE_DIR="$OUT/extraction/pendulum_videosaur_4slots.pkl"
 
 # Make the directory layout expected by extract_videosaur.py.
 mkdir -p \
@@ -87,13 +114,15 @@ PYTHONPATH=. python src/third_party/slotformer/base_slots/extract_videosaur.py \
   --videosaur_config src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml
 ```
 
+Note: `extract_videosaur.py` appends the checkpoint name to `--save_path` (and writes any `partial_*.pkl` next to it), so the extracted slots end up in `$OUT/extraction/`.
+
 <!-- 
 ## Step 3: Run the Training
 
 ```
 export WANDB_MODE=offline
 export PYTHONPATH=$(pwd)
-export SLOTPATH="/home/jichen/Downloads/pendulum-cjepa-dataset/videosaur/pendulum_videosaur_4slots.pkl"
+export SLOTPATH="${HOME}/Downloads/pendulum_output/extraction/pendulum_videosaur_4slots.pkl"
 
 python src/train/train_causalwm_from_clevrer_slot.py \
     cache_dir="${HOME}/.stable_worldmodel" \
