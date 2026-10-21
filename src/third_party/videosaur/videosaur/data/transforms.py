@@ -137,7 +137,12 @@ def build(config):
             transforms["segmentations"] = segmentation_transformation
 
     # just copy from movi for now
-    elif dataset in ["clevrer", "pusht", "phyre", "pendulum"]:
+    elif (
+        dataset == "clevrer"
+        or dataset == "pusht"
+        or dataset == "phyre"
+        or dataset == "pendulum"
+    ):
         if "target_size" in config:
             target_size = _to_2tuple(config.target_size)
             transforms[f"target_{transform_type}"] = tvt.Compose(
