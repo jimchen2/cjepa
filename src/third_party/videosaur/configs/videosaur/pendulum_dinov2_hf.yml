@@ -48,12 +48,12 @@ model:
   losses:
     loss_featrec:
       name: MSELoss
-      pred_dims: [0, ${globals.FEAT_DIM}]
+      pred_dims: [0, "${globals.FEAT_DIM}"]
     loss_timesim:
       name: CrossEntropyLoss
       target_key: encoder.vit_block_keys12
       remove_last_n_frames: 1
-      pred_dims: [${globals.FEAT_DIM}, "${add: ${globals.FEAT_DIM}, ${globals.NUM_PATCHES}}"]
+      pred_dims: ["${globals.FEAT_DIM}", "${add: ${globals.FEAT_DIM}, ${globals.NUM_PATCHES}}"]
       target_transform:
         name: utils.FeatureTimeSimilarity
         softmax: true
@@ -119,7 +119,7 @@ val_metrics: null
 
 dataset:
   # HF dataset source; materialized to shards by prepare_pendulum_hf.py.
-  hf_dataset_id: jimchen2/pendulum-cjepa-3k-clevrer
+  # hf_dataset_id: jimchen2/pendulum-cjepa-3k-clevrer
   train_shards: "data/pendulum_wds/train/pendulum-train-{000000..000018}.tar"
   val_shards: "data/pendulum_wds/val/pendulum-val-{000000..000004}.tar"
   batch_size: ${globals.BATCH_SIZE_PER_GPU}

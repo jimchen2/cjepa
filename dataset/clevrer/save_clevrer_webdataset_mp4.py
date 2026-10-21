@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 from torchcodec.decoders import VideoDecoder
 
-ROOT_DIR="clevrer_video"
+ROOT_DIR="/home/jichen/Downloads"
 # "your/path/to/data/clevrer"
 
 def make_shards(input_dir, split, out_dir, maxcount=512):
