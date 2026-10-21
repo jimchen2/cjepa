@@ -46,16 +46,18 @@ MODEL="$OUT/model/pendulum-videosaur-$RUN"
 LOG="$OUT/logs/videosaur-training-$RUN.log"
 PIDFILE="$OUT/logs/videosaur-training-$RUN.pid"
 
-mkdir -p "$MODEL" "$OUT/logs"
+# Path to your existing checkpoint
+CKPT="$OUT/model/videosaur-checkpoints/checkpoints/step=5000.ckpt"
 
-train_count=$(find "$DATA/train" -maxdepth 1 -name 'pendulum-train-*.tar' | wc -l)
-val_count=$(find "$DATA/val" -maxdepth 1 -name 'pendulum-val-*.tar' | wc -l)
+mkdir -p "$MODEL" "$OUT/logs"
 
 nohup env PYTHONPATH=. CUDA_VISIBLE_DEVICES=0 NCCL_NVLS_ENABLE=0 python src/third_party/videosaur/videosaur/train.py \
   --log-dir "$MODEL" \
+  --continue "$CKPT" \
   src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml \
   "dataset.train_shards=$DATA/train/pendulum-train-{000000..000018}.tar" \
-  "dataset.val_shards=$DATA/val/pendulum-val-{000000..000004}.tar" "dataset.num_val_workers=5"  \
+  "dataset.val_shards=$DATA/val/pendulum-val-{000000..000004}.tar" \
+  "dataset.num_val_workers=5" \
   > "$LOG" 2>&1 &
 echo $! > "$PIDFILE"
 
