@@ -16,19 +16,19 @@ Everything generated below goes under `~/Downloads/pendulum_output/` — nothing
     └── video_00475_4slot_overlay.mp4           # Step 3 example video
 ```
 
-Inputs that stay where they are: the repo (`~/Downloads/cjepa`), the Hugging Face dataset (`~/Downloads/pendulum_output/pendulum-cjepa-3k-new`, incl. its published checkpoints) and the extraction `--data_root` (`~/.stable_worldmodel`).
+Inputs that stay where they are: the repo (`~/Downloads/cjepa`), the Hugging Face dataset (`~/Downloads/pendulum-cjepa-3k-new`, incl. its published checkpoints) and the extraction `--data_root` (`~/.stable_worldmodel`).
 Each step sets `OUT` again so the blocks can be run independently.
 
 ## Step 1: Generate the (Pendulum) Dataset
 
-https://huggingface.co/datasets/jimchen2/pendulum_output/pendulum-cjepa-3k-new/tree/main
+https://huggingface.co/datasets/jimchen2/pendulum-cjepa-3k-new/tree/main
 
 Input dataset, expected at:
 
 ```
-~/Downloads/pendulum_output/pendulum-cjepa-3k-new/videos/train
-~/Downloads/pendulum_output/pendulum-cjepa-3k-new/videos/val
-~/Downloads/pendulum_output/pendulum-cjepa-3k-new/wds
+~/Downloads/pendulum-cjepa-3k-new/videos/train
+~/Downloads/pendulum-cjepa-3k-new/videos/val
+~/Downloads/pendulum-cjepa-3k-new/wds
 ```
 
 ## Step 2: Run the Training through VideoSaur
@@ -40,7 +40,7 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/
 cd "$HOME/Downloads/cjepa" || exit 1
 
 OUT="$HOME/Downloads/pendulum_output"
-DATA="$HOME/Downloads/pendulum_output/pendulum-cjepa-3k-new/wds"
+DATA="$HOME/Downloads/pendulum-cjepa-3k-new/wds"
 RUN="$(date +%Y%m%d-%H%M%S)"
 MODEL="$OUT/model/pendulum-videosaur-$RUN"
 LOG="$OUT/logs/videosaur-training-$RUN.log"
@@ -51,17 +51,15 @@ mkdir -p "$MODEL" "$OUT/logs"
 train_count=$(find "$DATA/train" -maxdepth 1 -name 'pendulum-train-*.tar' | wc -l)
 val_count=$(find "$DATA/val" -maxdepth 1 -name 'pendulum-val-*.tar' | wc -l)
 
-tmux new -d -s "train" \
-"env PYTHONPATH=. LD_LIBRARY_PATH=$LD_LIBRARY_PATH CUDA_VISIBLE_DEVICES=0 NCCL_NVLS_ENABLE=0 $CONDA_PREFIX/bin/python src/third_party/videosaur/videosaur/train.py \
-  --log-dir '$MODEL' \
+nohup env PYTHONPATH=. CUDA_VISIBLE_DEVICES=0 NCCL_NVLS_ENABLE=0 python src/third_party/videosaur/videosaur/train.py \
+  --log-dir "$MODEL" \
   src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml \
-  'dataset.train_shards=$DATA/train/pendulum-train-{000000..$train_max}.tar' \
-  'dataset.val_shards=$DATA/val/pendulum-val-{000000..$val_max}.tar' \
-  'dataset.num_val_workers=5'; exec bash" \; \
-  pipe-pane -o "cat >> $LOG" \; \
-  attach
+  "dataset.train_shards=$DATA/train/pendulum-train-{000000..000018}.tar" \
+  "dataset.val_shards=$DATA/val/pendulum-val-{000000..000004}.tar" "dataset.num_val_workers=5"  \
+  > "$LOG" 2>&1 &
+echo $! > "$PIDFILE"
 
-tmux a -t train
+tail -f "$LOG"
 ```
 
 Training Checkpoints: https://huggingface.co/datasets/jimchen2/pendulum-cjepa-3k-clevrer/tree/main/videosaur-checkpoints
@@ -78,8 +76,8 @@ mkdir -p "$OUT/examples"
 
 PYTHONPATH=. python \
   mystuff/extraction_reports/pendulum_plot.py \
-  --video ~/Downloads/pendulum_output/pendulum-cjepa-3k-new/videos/train/video_00475.mp4 \
-  --checkpoint ~/Downloads/pendulum_output/pendulum-cjepa-3k-new/videosaur-checkpoints/videosaur_pendulum_dinov2/checkpoints/step=5000.ckpt \
+  --video ~/Downloads/pendulum-cjepa-3k-new/videos/train/video_00475.mp4 \
+  --checkpoint ~/Downloads/pendulum-cjepa-3k-new/videosaur-checkpoints/videosaur_pendulum_dinov2/checkpoints/step=5000.ckpt \
   --config ~/Downloads/cjepa/src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml \
   --output "$OUT/examples/video_00475_4slot_overlay.mp4" \
   --device cuda
@@ -92,7 +90,7 @@ conda activate cjepa
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 
 OUT="$HOME/Downloads/pendulum_output"
-RAW="$HOME/Downloads/pendulum_output/pendulum-cjepa-3k-new"
+RAW="$HOME/Downloads/pendulum-cjepa-3k-new"
 ROOT="$HOME/.stable_worldmodel"
 
 export WEIGHT="$RAW/videosaur-checkpoints/videosaur_pendulum_dinov2/checkpoints/step=5000.ckpt"
