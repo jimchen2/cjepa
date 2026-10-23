@@ -51,7 +51,7 @@ CKPT="$OUT/model/videosaur-checkpoints/checkpoints/step=5000.ckpt"
 
 mkdir -p "$MODEL" "$OUT/logs"
 
-tmux new -d -s "train" \
+tmux new -d -s "pendulum-train" \
 "env PYTHONPATH=. CUDA_VISIBLE_DEVICES=0 NCCL_NVLS_ENABLE=0 python src/third_party/videosaur/videosaur/train.py \
   --log-dir '$MODEL' \
   --continue '$CKPT' \
@@ -62,7 +62,7 @@ tmux new -d -s "train" \
   pipe-pane -o "cat >> $LOG" \; \
   attach
 
-tmux a -t train
+tmux a -t pendulum-train
 ```
 
 Training Checkpoints: https://huggingface.co/datasets/jimchen2/pendulum-cjepa-3k-clevrer/tree/main/videosaur-checkpoints
