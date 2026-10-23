@@ -39,7 +39,7 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/
 
 cd "$HOME/Downloads/cjepa" || exit 1
 
-OUT="$HOME/Downloads/pendulum_output"
+OUT="$HOME/Downloads/jimchen2-blue-pendulum-output"
 DATASET="$HOME/Downloads/jimchen2-blue-pendulum-output/pendulum-cjepa-3k-new"
 DATA="$DATASET/wds"
 RUN="$(date +%Y%m%d-%H%M%S)"
