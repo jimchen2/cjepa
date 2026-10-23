@@ -49,7 +49,7 @@ PIDFILE="$OUT/logs/videosaur-training-$RUN.pid"
 mkdir -p "$MODEL" "$OUT/logs"
 
 tmux new -d -s "pendulum-train" \
-"env PYTHONPATH=. CUDA_VISIBLE_DEVICES=0 NCCL_NVLS_ENABLE=0 python src/third_party/videosaur/videosaur/train.py \
+"env PYTHONPATH=. CUDA_VISIBLE_DEVICES=4 NCCL_NVLS_ENABLE=0 python src/third_party/videosaur/videosaur/train.py \
   --log-dir '$MODEL' \
   --continue '$CKPT' \
   src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml \
