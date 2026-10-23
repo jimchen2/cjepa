@@ -46,9 +46,6 @@ MODEL="$OUT/model/pendulum-videosaur-$RUN"
 LOG="$OUT/logs/videosaur-training-$RUN.log"
 PIDFILE="$OUT/logs/videosaur-training-$RUN.pid"
 
-# Path to your existing checkpoint
-CKPT="$OUT/model/videosaur-checkpoints/checkpoints/step=5000.ckpt"
-
 mkdir -p "$MODEL" "$OUT/logs"
 
 tmux new -d -s "pendulum-train" \
