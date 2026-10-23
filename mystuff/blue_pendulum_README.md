@@ -49,7 +49,7 @@ PIDFILE="$OUT/logs/videosaur-training-$RUN.pid"
 
 mkdir -p "$MODEL" "$OUT/logs"
 
-tmux new -d -s "pendulum-train" \
+tmux new -d -s "blue-pendulum-train" \
 "env PYTHONPATH=. CUDA_VISIBLE_DEVICES=4 NCCL_NVLS_ENABLE=0 python src/third_party/videosaur/videosaur/train.py \
   --log-dir '$MODEL' \
   src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml \
@@ -59,7 +59,7 @@ tmux new -d -s "pendulum-train" \
   pipe-pane -o "cat >> $LOG" \; \
   attach
 
-tmux a -t pendulum-train
+tmux a -t blue-pendulum-train
 ```
 
 Training Checkpoints: https://huggingface.co/datasets/jimchen2/pendulum-cjepa-3k-clevrer/tree/main/videosaur-checkpoints
