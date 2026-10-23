@@ -44,7 +44,6 @@ tmux new -d -s "pendulum-ft" \
   'dataset.val_shards=$DATA/val/pendulum-val-{000000..$val_max}.tar' \
   'dataset.num_val_workers=5' \
   'trainer.max_steps=100000' \
-  'optimizer.lr_scheduler.warmup_steps=500' \
   'globals.BASE_LR=0.00003'; exec bash" \; \
   pipe-pane -o "cat >> $LOG" \; \
   attach
