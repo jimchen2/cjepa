@@ -87,7 +87,6 @@ tmux new -d -s "train" \
   src/third_party/videosaur/configs/videosaur/clevrer_dinov2_hf.yml \
   'dataset.train_shards=$DATA/train/clevrer-train-{000000..$train_max}.tar' \
   'dataset.val_shards=$DATA/val/clevrer-val-{000000..$val_max}.tar' \
-  'globals.BATCH_SIZE_PER_GPU=128' \
   'dataset.num_workers=16'; exec bash" \; \
   pipe-pane -o "cat >> $LOG" \; \
   attach
