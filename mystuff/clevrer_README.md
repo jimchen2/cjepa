@@ -81,7 +81,7 @@ val_max=$(printf "%06d" $(($(find "$DATA/val" -maxdepth 1 -name 'clevrer-val-*.t
 
 cd ~/Downloads/cjepa
 
-tmux new -d -s "train" \
+tmux new -d -s "clevrertrain" \
 "env PYTHONPATH=. CUDA_VISIBLE_DEVICES=0 NCCL_NVLS_ENABLE=0 python src/third_party/videosaur/videosaur/train.py \
   --log-dir '$MODEL' \
   src/third_party/videosaur/configs/videosaur/clevrer_dinov2_hf.yml \
@@ -91,7 +91,7 @@ tmux new -d -s "train" \
   pipe-pane -o "cat >> $LOG" \; \
   attach
 
-tmux a -t train
+tmux a -t clevrertrain
 ```
 
 Checkpoint: https://huggingface.co/jimchen2/clevrer_dinov2_checkpoint/blob/main/checkpoints/step%3D43000.ckpt
