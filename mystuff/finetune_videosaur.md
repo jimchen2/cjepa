@@ -15,7 +15,9 @@ wget -c -O "$OUT/model/clevrer_videosaur_model.ckpt" \
 
 The important line is `model.load_weights=...`.
 
-**Do not use `--continue`** (the line in `pendulum_README.md`). `--continue` resumes the old run: step 100000, the old optimizer and a decayed LR. Training would stop immediately or barely learn. `model.load_weights` loads only the weights and starts fresh from step 0.
+**Do not use `--continue`** (the line in `pendulum_README.md`). `--continue` resumes the old run: step 100000, the old optimizer and a decayed LR. `model.load_weights` loads only the weights and starts fresh from step 0.
+
+Also change the slots
 
 ```
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
