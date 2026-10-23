@@ -51,7 +51,6 @@ mkdir -p "$MODEL" "$OUT/logs"
 tmux new -d -s "pendulum-train" \
 "env PYTHONPATH=. CUDA_VISIBLE_DEVICES=4 NCCL_NVLS_ENABLE=0 python src/third_party/videosaur/videosaur/train.py \
   --log-dir '$MODEL' \
-  --continue '$CKPT' \
   src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml \
   'dataset.train_shards=$DATA/train/pendulum-train-{000000..000018}.tar' \
   'dataset.val_shards=$DATA/val/pendulum-val-{000000..000004}.tar' \
