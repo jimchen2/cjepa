@@ -20,6 +20,7 @@ The important line is `model.load_weights=...`.
 Also change the slots
 
 ```
+conda activate cjepa
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 cd "$HOME/Downloads/cjepa" || exit 1
 
