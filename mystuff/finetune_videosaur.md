@@ -47,6 +47,8 @@ tmux new -d -s "pendulum-ft" \
   'globals.BASE_LR=0.00003'; exec bash" \; \
   pipe-pane -o "cat >> $LOG" \; \
   attach
+
+tmux a -t pendulum-ft
 ```
 
 ## Step 3: Visualize + extract with the fine-tuned checkpoint
