@@ -91,7 +91,7 @@ train_session="$3"
 deadline=$((SECONDS + 7 * 24 * 60 * 60))
 
 echo "Watching model dir: $model"
-echo "Archiving to:       $archive"
+echo "Archiving to:       $archive (every 10,000 steps)"
 
 scan_checkpoints() {
   while IFS= read -r -d '' f; do
@@ -107,7 +107,7 @@ scan_checkpoints() {
       cp -- "$f" "$dest.tmp" && mv -- "$dest.tmp" "$dest"
       echo "[$(date +%H:%M:%S)] Archived $(basename "$f")"
     fi
-  done < <(find "$model" -type f -name 'step=*.ckpt' -print0)
+  done < <(find "$model" -type f -regex '.*/step=[1-9][0-9]*0000\.ckpt' -print0)
 }
 
 while (( SECONDS < deadline )); do
