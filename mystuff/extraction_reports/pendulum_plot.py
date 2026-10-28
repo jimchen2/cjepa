@@ -4,7 +4,7 @@ Render a pendulum MP4 with VideoSAUR's four slot-attention regions overlaid.
 
 Output:
   The original pendulum video with a colored hard slot assignment at every
-  DINO patch location. Colors represent slot indices, not fixed object names.
+  DINO patch location, plus a non-overlapping top header bar for the legend.
 """
 
 import argparse
@@ -67,8 +67,6 @@ print(f"Using slot-initializer seed: {args.seed}")
 print("Loading VideoSAUR config and checkpoint...")
 config = configuration.load_config(args.config)
 
-# The Pendulum config should already say NUM_SLOTS: 4.
-# Keep these assignments explicit for safety.
 config.globals.NUM_SLOTS = 4
 config.globals.SLOT_DIM = 128
 
@@ -119,7 +117,6 @@ print(f"Decoded {T} frames at {fps:.2f} FPS, size {original_w}x{original_h}")
 
 # ------------------------------------------------------------
 # Run DINOv2 encoder + VideoSAUR processor.
-# This obtains the 4 x 14 x 14 spatial slot assignments.
 # ------------------------------------------------------------
 mean = torch.tensor([0.485, 0.456, 0.406], device=device).view(1, 3, 1, 1)
 std = torch.tensor([0.229, 0.224, 0.225], device=device).view(1, 3, 1, 1)
@@ -160,14 +157,12 @@ if masks.shape[-1] != 196:
 masks = masks.reshape(T, 4, 14, 14)
 print(f"Attention-map shape: {masks.shape}")
 
-# At every patch, the four slot probabilities should sum to ~1.
 assert np.allclose(masks.sum(axis=1), 1.0, atol=1e-4), (
     "Unexpected slot-mask normalization."
 )
 
 # ------------------------------------------------------------
-# Render original RGB + hard slot assignment overlay.
-# Palette is BGR because OpenCV writes BGR frames.
+# Render top header bar + original RGB + hard slot assignment overlay.
 # ------------------------------------------------------------
 slot_colors_bgr = np.array(
     [
@@ -179,12 +174,15 @@ slot_colors_bgr = np.array(
     dtype=np.uint8,
 )
 
+header_h = 46
+out_h = original_h + header_h
+
 fourcc = cv2.VideoWriter_fourcc(*"mp4v")
 writer = cv2.VideoWriter(
     str(output_path),
     fourcc,
     fps,
-    (original_w, original_h),
+    (original_w, out_h),
 )
 
 if not writer.isOpened():
@@ -196,10 +194,7 @@ if not writer.isOpened():
 print(f"Rendering overlay video: {output_path}")
 
 for frame_idx, original_bgr in enumerate(frames_bgr):
-    # Each 14x14 cell is assigned to the slot with greatest attention.
     hard_grid = masks[frame_idx].argmax(axis=0).astype(np.uint8)  # [14,14]
-
-    # Spatial confidence: less opaque where no single slot dominates.
     confidence_grid = masks[frame_idx].max(axis=0).astype(np.float32)
 
     hard_full = cv2.resize(
@@ -215,42 +210,46 @@ for frame_idx, original_bgr in enumerate(frames_bgr):
 
     color_layer = slot_colors_bgr[hard_full]
 
-    # More transparent for uncertain patches.
     alpha = args.opacity * (0.35 + 0.65 * confidence_full)
-    output_frame = (
+    video_frame = (
         original_bgr.astype(np.float32) * (1.0 - alpha[..., None])
         + color_layer.astype(np.float32) * alpha[..., None]
     ).astype(np.uint8)
 
-    # Small legend.
-    cv2.rectangle(output_frame, (5, 5), (165, 97), (12, 20, 32), -1)
-    cv2.rectangle(output_frame, (5, 5), (165, 97), (225, 235, 245), 1)
+    # Create non-overlapping top header bar.
+    header = np.full((header_h, original_w, 3), (12, 20, 32), dtype=np.uint8)
+    cv2.line(header, (0, header_h - 1), (original_w, header_h - 1), (225, 235, 245), 1)
 
+    # Row 1: Horizontal slot legend.
+    col_w = max(original_w // 4, 1)
     for slot_idx, color in enumerate(slot_colors_bgr):
-        y = 22 + 18 * slot_idx
-        cv2.rectangle(output_frame, (13, y - 11), (27, y + 3), color.tolist(), -1)
+        x = 6 + slot_idx * col_w
+        cv2.rectangle(header, (x, 6), (x + 12, 18), color.tolist(), -1)
         cv2.putText(
-            output_frame,
-            f"Slot {slot_idx + 1}",
-            (35, y),
+            header,
+            f"S{slot_idx + 1}",
+            (x + 16, 16),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.48,
+            0.40,
             (240, 245, 250),
             1,
             cv2.LINE_AA,
         )
 
+    # Row 2: Frame counter.
     cv2.putText(
-        output_frame,
+        header,
         f"Frame {frame_idx + 1}/{T}",
-        (5, original_h - 10),
+        (6, 36),
         cv2.FONT_HERSHEY_SIMPLEX,
-        0.48,
+        0.42,
         (255, 255, 255),
         1,
         cv2.LINE_AA,
     )
 
+    # Stack header on top of the video frame so nothing overlaps the pendulum.
+    output_frame = np.vstack([header, video_frame])
     writer.write(output_frame)
 
 writer.release()
