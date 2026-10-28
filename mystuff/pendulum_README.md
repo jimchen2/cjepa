@@ -63,6 +63,84 @@ tmux a -t pendulum-train
 
 Training Checkpoints: https://huggingface.co/datasets/jimchen2/pendulum-cjepa-3k-clevrer/tree/main/videosaur-checkpoints
 
+Try to archive the checkpoints
+
+```
+OUT="$HOME/Downloads/pendulum_output"
+MODEL="$(find "$OUT/model" -mindepth 1 -maxdepth 1 -type d \
+  -name 'pendulum-videosaur-*' -printf '%T@ %p\n' |
+  sort -nr | head -1 | cut -d' ' -f2-)"
+
+if [ -z "$MODEL" ]; then
+  echo "Error: No model directory found in $OUT/model. Start Step 2 first." >&2
+  exit 1
+fi
+
+ARCHIVE="$OUT/checkpoint-archive/$(basename "$MODEL")"
+SESSION="pendulum-train"
+WATCH_SESSION="checkpoint-copy-$(date +%H%M%S)"
+WATCH_SCRIPT="$OUT/logs/$WATCH_SESSION.sh"
+
+mkdir -p "$ARCHIVE" "$OUT/logs"
+
+cat > "$WATCH_SCRIPT" <<'BASH'
+#!/usr/bin/env bash
+model="$1"
+archive="$2"
+train_session="$3"
+deadline=$((SECONDS + 7 * 24 * 60 * 60))
+
+echo "Watching model dir: $model"
+echo "Archiving to:       $archive"
+
+scan_checkpoints() {
+  while IFS= read -r -d '' f; do
+    dest="$archive/$(basename "$f")"
+    [ -f "$dest" ] && continue
+
+    size1=$(stat -c%s "$f" 2>/dev/null) || continue
+    sleep 5
+    [ -f "$f" ] || continue
+    size2=$(stat -c%s "$f" 2>/dev/null) || continue
+
+    if [ "$size1" = "$size2" ] && [ "$size2" -gt 0 ]; then
+      cp -- "$f" "$dest.tmp" && mv -- "$dest.tmp" "$dest"
+      echo "[$(date +%H:%M:%S)] Archived $(basename "$f")"
+    fi
+  done < <(find "$model" -type f -name 'step=*.ckpt' -print0)
+}
+
+while (( SECONDS < deadline )); do
+  scan_checkpoints
+
+  if [ -f "$archive/step=100000.ckpt" ]; then
+    echo "100000-step checkpoint archived; watcher finished."
+    exit 0
+  fi
+
+  if ! tmux has-session -t "$train_session" 2>/dev/null; then
+    echo "Training session ended; doing a final check."
+    sleep 6
+    scan_checkpoints
+    exit 0
+  fi
+
+  sleep 3
+done
+
+echo "Seven-day safety limit reached; watcher finished."
+BASH
+
+chmod +x "$WATCH_SCRIPT"
+
+tmux new-session -d -s "$WATCH_SESSION" \
+  "bash '$WATCH_SCRIPT' '$MODEL' '$ARCHIVE' '$SESSION'; exec bash"
+
+echo "Watcher tmux session: $WATCH_SESSION"
+echo "Archive directory:    $ARCHIVE"
+tmux attach -t "$WATCH_SESSION"
+```
+
 ## Step 3: Run the Extraction
 
 Generate an example video
