@@ -151,7 +151,7 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/
 cd ~/Downloads/cjepa
 
 OUT="$HOME/Downloads/pendulum_output"
-VIDEO="$OUT/pendulum-cjepa-3k-new/videos/train/video_00475.mp4"
+VID_DIR="$OUT/pendulum-cjepa-3k-new/videos/train"
 CONFIG="$HOME/Downloads/cjepa/src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml"
 
 for item in \
@@ -164,14 +164,22 @@ do
   RUN="${item%:*}"
   STEP="${item#*:}"
   
-  mkdir -p "$OUT/examples/$RUN/$STEP"
+  EX_DIR="$OUT/examples/$RUN/$STEP"
+  CKPT_DIR="$OUT/checkpoint-archive/$RUN"
+  mkdir -p "$EX_DIR"
   
-  PYTHONPATH=. python mystuff/extraction_reports/pendulum_plot.py \
-    --video "$VIDEO" \
-    --checkpoint "$OUT/checkpoint-archive/$RUN/step=${STEP}.ckpt" \
-    --config "$CONFIG" \
-    --output "$OUT/examples/$RUN/$STEP/video_00475_4slot_overlay.mp4" \
-    --device cuda
+  for VID in "video_00046" "video_00112" "video_00137"; do
+    OUT_FILE="$EX_DIR/${VID}_4slot_overlay.mp4"
+    
+    PYTHONPATH=. python mystuff/extraction_reports/pendulum_plot.py \
+      --video "$VID_DIR/${VID}.mp4" \
+      --checkpoint "$CKPT_DIR/step=${STEP}.ckpt" \
+      --config "$CONFIG" \
+      --output "$OUT_FILE" \
+      --device cuda
+      
+    cp "$OUT_FILE" "$CKPT_DIR/step=${STEP}_${VID}_4slot_overlay.mp4"
+  done
 done
 ```
 
