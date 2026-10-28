@@ -1,5 +1,5 @@
 ```
-hf upload jimchen2/jimchen2-pendulum-output "~/Downloads/pendulum output" .
+hf upload jimchen2/jimchen2-pendulum-output "~/Downloads/pendulum_output" .
 ```
 
 ## Output layout
