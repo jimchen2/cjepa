@@ -1,3 +1,8 @@
+```
+cd ~/Downloads/pendulum_output
+huggingface-cli upload jimchen2/jimchen2-pendulum-output . .
+```
+
 ## Output layout
 
 Everything generated below goes under `~/Downloads/pendulum_output/` — nothing is dumped directly in `~/Downloads`:
