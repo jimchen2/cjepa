@@ -1,6 +1,6 @@
 ```
 cd ~/Downloads/pendulum_output
-huggingface-cli upload jimchen2/jimchen2-pendulum-output . .
+hf upload jimchen2/jimchen2-pendulum-output . .
 ```
 
 ## Output layout
