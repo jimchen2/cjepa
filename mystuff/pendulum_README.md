@@ -1,5 +1,5 @@
 ```
-hf upload jimchen2/jimchen2-pendulum-output . ~/Downloads/pendulum_output
+huggingface-cli upload jimchen2/jimchen2-pendulum-output "~/Downloads/pendulum output" .
 ```
 
 ## Output layout
