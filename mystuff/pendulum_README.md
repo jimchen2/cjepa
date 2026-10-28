@@ -146,18 +146,33 @@ tmux attach -t "$WATCH_SESSION"
 Generate an example video
 
 ```
+conda activate cjepa
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 cd ~/Downloads/cjepa
 
 OUT="$HOME/Downloads/pendulum_output"
-mkdir -p "$OUT/examples"
+VIDEO="$OUT/pendulum-cjepa-3k-new/videos/train/video_00475.mp4"
+CONFIG="$HOME/Downloads/cjepa/src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml"
 
-PYTHONPATH=. python \
-  mystuff/extraction_reports/pendulum_plot.py \
-  --video ~/Downloads/pendulum_output/pendulum-cjepa-3k-new/videos/train/video_00475.mp4 \
-  --checkpoint ~/Downloads/pendulum_output/pendulum-cjepa-3k-new/videosaur-checkpoints/videosaur_pendulum_dinov2/checkpoints/step=5000.ckpt \
-  --config ~/Downloads/cjepa/src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml \
-  --output "$OUT/examples/video_00475_4slot_overlay.mp4" \
-  --device cuda
+for item in \
+  "pendulum-ft-videosaur-20261022-201603:100000" \
+  "pendulum-ft-videosaur-20261022-201603:34000" \
+  "pendulum-videosaur-20261022-194905:100000" \
+  "pendulum-videosaur-20261028-090204:10000" \
+  "pendulum-videosaur-20261028-090204:20000"
+do
+  RUN="${item%:*}"
+  STEP="${item#*:}"
+  
+  mkdir -p "$OUT/examples/$RUN/$STEP"
+  
+  PYTHONPATH=. python mystuff/extraction_reports/pendulum_plot.py \
+    --video "$VIDEO" \
+    --checkpoint "$OUT/checkpoint-archive/$RUN/step=${STEP}.ckpt" \
+    --config "$CONFIG" \
+    --output "$OUT/examples/$RUN/$STEP/video_00475_4slot_overlay.mp4" \
+    --device cuda
+done
 ```
 
 Extraction
