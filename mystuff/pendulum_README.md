@@ -8,12 +8,14 @@ Everything generated below goes under `~/Downloads/pendulum_output/` — nothing
 │   └── pendulum-videosaur-<RUN>/               # Step 2 VideoSaur --log-dir
 │       └── videosaur_pendulum/<timestamp>_pendulum_dinov2/
 │           └── checkpoints/, metrics/, tb/, settings.yaml
+├── checkpoint-archive/
+│   └── pendulum-videosaur-<RUN>/
+│       ├── step=<STEP>.ckpt                    # Step 2 archived checkpoints
+│       └── step=<STEP>_video_*_4slot_overlay.mp4 # Step 3 example videos
 ├── logs/
 │   └── videosaur-training-<RUN>.log, videosaur-training-<RUN>.pid
-├── extraction/
-│   └── pendulum_videosaur_4slots*.pkl          # Step 3 extracted slots
-└── examples/
-    └── video_00475_4slot_overlay.mp4           # Step 3 example video
+└── extraction/
+    └── pendulum_videosaur_4slots*.pkl          # Step 3 extracted slots
 ```
 
 Inputs that stay where they are: the repo (`~/Downloads/cjepa`), the Hugging Face dataset (`~/Downloads/pendulum_output/pendulum-cjepa-3k-new`, incl. its published checkpoints) and the extraction `--data_root` (`~/.stable_worldmodel`).
@@ -159,17 +161,19 @@ for item in \
   "pendulum-ft-videosaur-20261022-201603:34000" \
   "pendulum-videosaur-20261022-194905:100000" \
   "pendulum-videosaur-20261028-090204:10000" \
-  "pendulum-videosaur-20261028-090204:20000"
+  "pendulum-videosaur-20261028-090204:20000" \
+  "pendulum-videosaur-20261028-090204:30000" \
+  "pendulum-videosaur-20261028-090204:40000" \
+  "pendulum-videosaur-20261028-090204:50000" \
+  "pendulum-videosaur-20261028-090204:60000"
 do
   RUN="${item%:*}"
   STEP="${item#*:}"
   
-  EX_DIR="$OUT/examples/$RUN/$STEP"
   CKPT_DIR="$OUT/checkpoint-archive/$RUN"
-  mkdir -p "$EX_DIR"
   
   for VID in "video_00046" "video_00112" "video_00137"; do
-    OUT_FILE="$EX_DIR/${VID}_4slot_overlay.mp4"
+    OUT_FILE="$CKPT_DIR/step=${STEP}_${VID}_4slot_overlay.mp4"
     
     PYTHONPATH=. python mystuff/extraction_reports/pendulum_plot.py \
       --video "$VID_DIR/${VID}.mp4" \
@@ -177,8 +181,6 @@ do
       --config "$CONFIG" \
       --output "$OUT_FILE" \
       --device cuda
-      
-    cp "$OUT_FILE" "$CKPT_DIR/step=${STEP}_${VID}_4slot_overlay.mp4"
   done
 done
 ```
