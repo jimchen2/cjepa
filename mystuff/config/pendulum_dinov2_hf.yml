@@ -1,5 +1,4 @@
-# Pendulum C-JEPA 3K: 160 frames at 12 fps, 196x196 RGB videos.
-# Source: https://huggingface.co/datasets/jimchen2/pendulum-cjepa-3k-clevrer
+# Pendulum C-JEPA 3K: 160 frames at 12 fps, 256×256 RGB videos.
 # Run `python prepare_pendulum_hf.py --output data/pendulum_wds` to download the
 # dataset from Hugging Face and create the WebDataset shards consumed below.
 experiment_group: videosaur_pendulum
