@@ -1,4 +1,5 @@
-# Pendulum C-JEPA 3K: 160 frames at 12 fps, 256×256 RGB videos.
+# Pendulum C-JEPA 3K: 160 frames at 12 fps, 196x196 RGB videos.
+# Source: https://huggingface.co/datasets/jimchen2/pendulum-cjepa-3k-clevrer
 # Run `python prepare_pendulum_hf.py --output data/pendulum_wds` to download the
 # dataset from Hugging Face and create the WebDataset shards consumed below.
 experiment_group: videosaur_pendulum
@@ -117,7 +118,8 @@ model:
 val_metrics: null
 
 dataset:
-  hf_dataset_id: jimchen2/pendulum-cjepa-3k-256-wazob
+  # HF dataset source; materialized to shards by prepare_pendulum_hf.py.
+  hf_dataset_id: jimchen2/pendulum-cjepa-3k-clevrer
   train_shards: "data/pendulum_wds/train/pendulum-train-{000000..000018}.tar"
   val_shards: "data/pendulum_wds/val/pendulum-val-{000000..000004}.tar"
   batch_size: ${globals.BATCH_SIZE_PER_GPU}
