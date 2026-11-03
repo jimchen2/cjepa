@@ -15,7 +15,7 @@ globals:
   BATCH_SIZE_PER_GPU: 32
   TOTAL_BATCH_SIZE: "${mul: ${.NUM_GPUS}, ${.BATCH_SIZE_PER_GPU}}"
   BASE_LR: 0.0001
-  SIM_WEIGHT: 0.3
+  SIM_WEIGHT: 1.0
   SIM_TEMP: 0.15
 
 wandb:
@@ -61,7 +61,7 @@ model:
         threshold: 0.0
   loss_weights:
     loss_timesim: ${globals.SIM_WEIGHT}
-    loss_featrec: 1.0
+    loss_featrec: 0.1
   initializer:
     name: RandomInit
     n_slots: ${globals.NUM_SLOTS}
