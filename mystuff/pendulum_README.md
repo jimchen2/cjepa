@@ -3,7 +3,7 @@ hf upload jimchen2/jimchen2-pendulum-output-1 "/home/jichen/Downloads/pendulum_o
 ```
 
 ```
-cp ~/Downloads/cjepa/mystuff/config/pendulum_dinov2_hf.yml ~/Downloads/cjepa/src/third_party/videosaur/configs/videosaur/
+cp ~/Downloads/cjepa/mystuff/config/pendulum_dinov2_hf.yml ~/Downloads/cjepa/src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml
 ```
 
 ## Output layout
