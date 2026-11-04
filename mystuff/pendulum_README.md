@@ -226,8 +226,7 @@ PYTHONPATH=. python src/third_party/slotformer/base_slots/extract_videosaur.py \
 
 Note: `extract_videosaur.py` appends the checkpoint name to `--save_path` (and writes any `partial_*.pkl` next to it), so the extracted slots end up in `$OUT/extraction/`.
 
-<!-- 
-## Step 3: Run the Training
+## Step 4: Run the Training
 
 ```
 export WANDB_MODE=offline
