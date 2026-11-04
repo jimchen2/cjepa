@@ -48,12 +48,12 @@ model:
   losses:
     loss_featrec:
       name: MSELoss
-      pred_dims: [0, ${globals.FEAT_DIM}]
+      pred_dims: [0, "${globals.FEAT_DIM}"]
     loss_timesim:
       name: CrossEntropyLoss
       target_key: encoder.vit_block_keys12
       remove_last_n_frames: 1
-      pred_dims: [${globals.FEAT_DIM}, "${add: ${globals.FEAT_DIM}, ${globals.NUM_PATCHES}}"]
+      pred_dims: ["${globals.FEAT_DIM}", "${add: ${globals.FEAT_DIM}, ${globals.NUM_PATCHES}}"]
       target_transform:
         name: utils.FeatureTimeSimilarity
         softmax: true
