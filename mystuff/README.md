@@ -157,3 +157,25 @@ Explanatory accuracy: 98.00%
 Predictive accuracy (uses C-JEPA's rolled-out future frames 128–159): 82.50%
 Counterfactual accuracy: 97.08%
 Overall Multiple-Choice accuracy: 92.53%
+
+
+
+
+---
+
+
+New thing with shadows more detached
+
+13:15:54.339 | INFO    (411166, __main__) | Train samples: 348000, Val samples: 87000
+Epoch 1: 100%|██████████| 10875/10875 [06:28<00:00, 28.02it/s, loss=0.0038, future=0.0035]
+13:22:23.078 | INFO    (411166, __main__) | Epoch 1: Train Loss: 0.0070, Future: 0.0053, Masked: 0.0018
+13:22:31.261 | INFO    (411166, __main__) | Epoch 1: Val Loss: 0.0078
+13:22:31.280 | INFO    (411166, __main__) | Saved checkpoint to /home/jichen/.stable_worldmodel/pendulum_cjepa_6k_epoch_1_predictor.ckpt
+Epoch 2: 100%|██████████| 10875/10875 [06:32<00:00, 27.69it/s, loss=0.0036, future=0.0033]
+13:29:04.082 | INFO    (411166, __main__) | Epoch 2: Train Loss: 0.0040, Future: 0.0036, Masked: 0.0003
+13:29:12.218 | INFO    (411166, __main__) | Epoch 2: Val Loss: 0.0075
+13:29:12.235 | INFO    (411166, __main__) | Saved checkpoint to /home/jichen/.stable_worldmodel/pendulum_cjepa_6k_epoch_2_predictor.ckpt
+Epoch 3: 100%|██████████| 10875/10875 [06:28<00:00, 28.02it/s, loss=0.0034, future=0.0032]
+13:35:40.392 | INFO    (411166, __main__) | Epoch 3: Train Loss: 0.0036, Future: 0.0034, Masked: 0.0003
+13:35:48.720 | INFO    (411166, __main__) | Epoch 3: Val Loss: 0.0074
+13:35:48.736 | INFO    (411166, __main__) | Saved checkpoint to /home/jichen/.stable_worldmodel/pendulum_cjepa_6k_epoch_3_predictor.ckpt
