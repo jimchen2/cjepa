@@ -1,0 +1,101 @@
+### Extracting and Plotting Offline W&B Logs
+
+Because the run was stored offline, lacked cloud entity write-access for `wandb sync`, and used a newer `wandb` SDK version without Python's `DataStore` module, extraction succeeded by parsing the binary `.wandb` LevelDB blocks directly via `struct` and decoding nested keys (`item.nested_key`) via `wandb_internal_pb2`.
+
+#### 1. Locate the `.wandb` Binary File
+```bash
+find ~ -name "*<run_id>*.wandb" 2>/dev/null
+```
+
+#### 2. Extract All Unsampled Metrics to CSV
+Save as `extract_wandb.py` and run with `python extract_wandb.py`:
+```python
+import json, struct
+import pandas as pd
+from wandb.proto import wandb_internal_pb2
+
+path = "/home/jichen/Downloads/cjepa/wandb/offline-run-20261111_113727-w8a3kgko/run-w8a3kgko.wandb"
+rows = []
+
+with open(path, "rb") as f:
+    f.seek(7)  # Skip 7-byte W&B magic header
+    buf = b""
+    block_idx = 0
+    while True:
+        block_size = 32761 if block_idx == 0 else 32768
+        block = f.read(block_size)
+        if not block:
+            break
+        block_idx += 1
+        pos = 0
+        while pos + 7 <= len(block):
+            crc, length, rec_type = struct.unpack("<IHB", block[pos : pos + 7])
+            pos += 7
+            if rec_type == 0 or pos + length > len(block):
+                break
+            chunk = block[pos : pos + length]
+            pos += length
+            if rec_type == 1:
+                data = chunk
+            elif rec_type == 2:
+                buf = chunk
+                continue
+            elif rec_type == 3:
+                buf += chunk
+                continue
+            elif rec_type == 4:
+                data = buf + chunk
+                buf = b""
+            else:
+                continue
+
+            pb = wandb_internal_pb2.Record()
+            pb.ParseFromString(data)
+            if pb.WhichOneof("record_type") == "history":
+                row = {}
+                for item in pb.history.item:
+                    # Handle both flat keys and newer nested_key lists
+                    k = item.key if item.key else "/".join(item.nested_key)
+                    row[k] = json.loads(item.value_json)
+                rows.append(row)
+
+df = pd.DataFrame(rows)
+df.to_csv("metrics.csv", index=False)
+```
+
+#### 3. Plot Extracted Metrics
+Save as `plot_metrics.py` and run with `python plot_metrics.py`:
+```python
+import math
+import matplotlib.pyplot as plt
+import pandas as pd
+
+df = pd.read_csv("metrics.csv")
+metric_cols = [c for c in df.columns if not c.startswith("_")]
+
+cols = 3
+rows = math.ceil(len(metric_cols) / cols)
+fig, axes = plt.subplots(rows, cols, figsize=(5 * cols, 3.5 * rows))
+axes = axes.flatten() if len(metric_cols) > 1 else [axes]
+
+step_col = "_step" if "_step" in df.columns else df.index
+
+for i, col in enumerate(metric_cols):
+    sub = pd.DataFrame(
+        {
+            "step": df[step_col] if isinstance(step_col, str) else step_col,
+            col: pd.to_numeric(df[col], errors="coerce"),
+        }
+    ).dropna()
+
+    axes[i].plot(sub["step"], sub[col], marker="." if len(sub) < 50 else None)
+    axes[i].set_title(col, fontsize=10)
+    axes[i].set_xlabel("Step")
+    axes[i].grid(True, alpha=0.3)
+
+for j in range(i + 1, len(axes)):
+    axes[j].axis("off")
+
+plt.tight_layout()
+plt.savefig("all_metrics.png", dpi=150)
+```
