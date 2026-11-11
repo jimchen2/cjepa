@@ -78,3 +78,11 @@ CUDA_VISIBLE_DEVICES=0 python src/aloe_train.py \
   --exp_name aloe_pendulum_cjepa100k_ep4 \
   --out_dir \"$HOME/Downloads/pendulum_output/aloe_runs\" \
   --fp16 --cudnn 2>&1 | tee \"$HOME/Downloads/pendulum_output/logs/aloe_pendulum.log\"; exec bash"
+
+
+
+Descriptive accuracy: 76.25%
+Explanatory accuracy: 98.00%
+Predictive accuracy (uses C-JEPA's rolled-out future frames 128–159): 82.50%
+Counterfactual accuracy: 97.08%
+Overall Multiple-Choice accuracy: 92.53%
