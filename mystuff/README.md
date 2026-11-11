@@ -55,3 +55,26 @@ CUDA_VISIBLE_DEVICES=0 python src/aloe_train.py \
   --exp_name aloe_pendulum_cjepa100k_ep4 \
   --out_dir \"$HOME/Downloads/pendulum_output/aloe_runs\" \
   --fp16 --cudnn 2>&1 | tee \"$HOME/Downloads/pendulum_output/logs/aloe_pendulum.log\"; exec bash"
+
+
+
+conda activate cjepa
+cd "$HOME/Downloads/cjepa"
+
+# Change max_n_objects = 4 -> max_n_objects = 3 (since 4 total slots = 3 + 1)
+sed -i 's/max_n_objects = 4/max_n_objects = 3/' src/third_party/slotformer/clevrer_vqa/configs/aloe_pendulum_params_rollout.py
+
+# Kill old tmux session if still lingering, then launch clean
+tmux kill-session -t aloe-pendulum 2>/dev/null || true
+
+tmux new -s aloe-pendulum "
+export LD_LIBRARY_PATH=\"$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH\"
+export WANDB_MODE=offline
+export PYTHONPATH=\"$(pwd):$(pwd)/src/third_party/slotformer\"
+
+CUDA_VISIBLE_DEVICES=0 python src/aloe_train.py \
+  --task clevrer_vqa \
+  --params src/third_party/slotformer/clevrer_vqa/configs/aloe_pendulum_params_rollout.py \
+  --exp_name aloe_pendulum_cjepa100k_ep4 \
+  --out_dir \"$HOME/Downloads/pendulum_output/aloe_runs\" \
+  --fp16 --cudnn 2>&1 | tee \"$HOME/Downloads/pendulum_output/logs/aloe_pendulum.log\"; exec bash"
