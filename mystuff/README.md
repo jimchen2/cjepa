@@ -1,5 +1,76 @@
 wandb leet /home/jichen/Downloads/cjepa/wandb/offline-run-20261111_113727-w8a3kgko
 
+(cjepa) jichen@uark.edu@eecs-s-sail2025:~$ python -c '
+import json, struct
+import pandas as pd
+from wandb.proto import wandb_internal_pb2
+
+path = "/home/jichen/Downloads/cjepa/wandb/offline-run-20261111_113727-w8a3kgko/run-w8a3kgko.wandb"
+rows = []
+
+with open(path, "rb") as f:
+    f.seek(7)
+    buf = b""
+    block_idx = 0
+    while True:
+        block_size = 32761 if block_idx == 0 else 32768
+        block = f.read(block_size)
+        if not block:
+            break
+        block_idx += 1
+        pos = 0
+        while pos + 7 <= len(block):
+            crc, length, rec_type = struct.unpack("<IHB", block[pos:pos+7])
+            pos += 7
+            if rec_type == 0 or pos + length > len(block):
+                break
+            chunk = block[pos:pos+length]
+            pos += length
+            if rec_type == 1: data = chunk
+            elif rec_type == 2: buf = chunk; continue
+            elif rec_type == 3: buf += chunk; continue
+            elif rec_type == 4: data = buf + chunk; buf = b""
+'rint("Columns:", list(df.columns))en(df.columns)} columns to metrics.csv")
+Saved 4419 rows and 15 columns to metrics.csv
+Columns: ['_step', 'train/loss', 'train/loss_future', 'train/loss_masked_history', 'train/step', 'train/epoch', '_timestamp', '_runtime', 'val/loss', 'train/epoch_loss_future', 'train/epoch_loss_masked_history', 'epoch', 'val/loss_future', 'val/loss_masked_history', 'train/epoch_loss']
+(cjepa) jichen@uark.edu@eecs-s-sail2025:~$ python -c '
+import pandas as pd
+df = pd.read_csv("metrics.csv")
+
+for col in sorted(df.columns):
+    if col.startswith("_"): continue
+    s = pd.to_numeric(df[col], errors="coerce").dropna()
+    if len(s) > 0:
+        print(f"{col:30s} | count={len(s):4d} | start={s.iloc[0]:.6f} | end={s.iloc[-1]:.6f} | min={s.min():.6f}")
+'
+epoch                          | count=   4 | start=1.000000 | end=4.000000 | min=1.000000
+train/epoch                    | count=4415 | start=0.000000 | end=4.000000 | min=0.000000
+train/epoch_loss               | count=   4 | start=0.009843 | end=0.003866 | min=0.003866
+train/epoch_loss_future        | count=   4 | start=0.006416 | end=0.003311 | min=0.003311
+train/epoch_loss_masked_history | count=   4 | start=0.003427 | end=0.000555 | min=0.000555
+train/loss                     | count=4415 | start=0.116233 | end=0.003571 | min=0.003036
+train/loss_future              | count=4415 | start=0.058387 | end=0.003032 | min=0.002613
+train/loss_masked_history      | count=4415 | start=0.057846 | end=0.000539 | min=0.000396
+train/step                     | count=4415 | start=10.000000 | end=44150.000000 | min=10.000000
+val/loss                       | count=   4 | start=0.009927 | end=0.009380 | min=0.009380
+val/loss_future                | count=   4 | start=0.009927 | end=0.009380 | min=0.009380
+val/loss_masked_history        | count=   4 | start=0.000000 | end=0.000000 | min=0.000000
+(cjepa) jichen@uark.edu@eecs-s-sail2025:~$ python -c '
+import pandas as pd
+df = pd.read_csv("metrics.csv")
+ep = df.dropna(subset=["epoch"])[
+    ["epoch", "train/epoch_loss_future", "val/loss_future", "train/epoch_loss_masked_history", "train/epoch_loss"]
+]
+print(ep.to_string(index=False))
+'
+ epoch  train/epoch_loss_future  val/loss_future  train/epoch_loss_masked_history  train/epoch_loss
+   1.0                 0.006416         0.009927                         0.003427          0.009843
+   2.0                 0.003838         0.009620                         0.000823          0.004660
+   3.0                 0.003492         0.009501                         0.000633          0.004125
+   4.0                 0.003311         0.009380                         0.000555          0.003866
+(cjepa) jichen@uark.edu@eecs-s-sail2025:~$ 
+
+
 Step A succeeded—your C-JEPA rollout slots (160 frames for all 2400 train and 600 val videos) are now saved at:
 /home/jichen/Downloads/pendulum_output/extraction/rollout_pendulum_videosaur_4slots_100k_obs128_lr0.0005_mask1.pkl
 
