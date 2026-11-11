@@ -99,3 +99,306 @@ for j in range(i + 1, len(axes)):
 plt.tight_layout()
 plt.savefig("all_metrics.png", dpi=150)
 ```
+
+### 1. Root Causes & Required Changes (Post-Mortem)
+
+1. **Missing Git Submodule URLs (`ModuleNotFoundError`)**: `.gitmodules` lacked URLs for `stable-pretraining`, `stable-worldmodel`, and `nerv`, leaving empty directories in `src/third_party/`. `git submodule update` failed. **Fix**: Delete the empty placeholder folders, manually `git clone` the repositories, checkout the pinned commit hashes, and install via `pip install -e . --no-deps` (using `--no-deps` to preserve existing PyTorch/CUDA versions).
+2. **Filename Append & Hydra `=` Parsing**: `extract_videosaur.py` automatically appends `_step=100000` to `--save_path`. Passing paths containing `=` directly to Hydra CLI args breaks Hydra's parser. **Fix**: Wrap Hydra path overrides in nested quotes: `"embedding_dir='${SLOTPATH}'"`.
+3. **Rollout Tensor Shape Mismatch (`160` vs `128`)**: `extract_videosaur.py` extracted all `160` frames, but `rollout_video_slots` in `train_causalwm_from_clevrer_slot.py` hardcodes `OBS_FRAMES = 128` (`extended_slots[:, :128] = batch_slots`). **Fix**: Slice the extracted `.pkl` arrays to `[:128]` before running `rollout_only=true`.
+4. **PyTorch Lightning Compatibility in `nerv`**: `nerv` targets `pytorch-lightning==0.8.*`, while the environment uses `2.x`. **Fix**: Overwrite `src/third_party/nerv/nerv/utils/misc.py` with `src/custom_codes/misc.py`.
+5. **Dataset Schema & Cache Mismatch in ALOE**: `clevrer.py` expects a flat JSON list of scenes, `scene_index` integers, basename `video_filename`s, dict-formatted multiple-choice options (`{"choice_id", "choice", "answer": "correct"|"wrong"}`), string-only descriptive answers, a custom vocabulary JSON, and a populated `cache/CLEVRER_video_fn2video_path.json`. Pendulum's raw JSONs used nested dicts (`scene_annotation`), relative paths, and integer MC answers. **Fix**: Run a preprocessing script to convert the JSON schema, build `pendulum_vocab.json`, and update the cache JSON.
+6. **ALOE Positional Embedding Crash (`152` vs `177`)**: `TransformerEncoderWithPosEnc` computes sequence length using `(max_n_objects + 1) * n_sample_frames` (accounting for 1 CLS token). Setting `max_n_objects = 4` for 4 slots created `5 * 25` tokens instead of `4 * 25`, causing a 25-token mismatch. **Fix**: Set `max_n_objects = NUM_SLOTS - 1` (`3` for 4 slots).
+7. **Foreground Execution Interruption**: Running training directly in the shell resulted in a `KeyboardInterrupt` at Epoch 5 (`Ctrl+C`), and `train_causalwm_from_clevrer_slot.py` lacks full training-state resumption in the standard CLI workflow.
+
+---
+
+### 2. Cautions for Future Training
+
+* **Always run inside `tmux` or `nohup`** and pipe output (`2>&1 | tee log.txt`) to prevent accidental `Ctrl+C` or SSH disconnects.
+* **Quote `=` in Hydra CLI arguments** whenever checkpoint or `.pkl` filenames contain `step=...`.
+* **Use `--no-deps`** when installing editable local packages so `pip` does not overwrite your CUDA-specific `torch`/`torchvision` wheels.
+* **Restore `CLEVRER_video_fn2video_path.json.bak`** before switching back to original CLEVRER experiments, as ALOE reads this hardcoded global cache path in `get_files()`.
+* **Match `max_n_objects = NUM_SLOTS - 1`** in ALOE configs whenever changing VideoSAUR slot counts.
+* **Match rollout hyperparameters** (`predictor_lr`, `num_masked_slots`, `NUM_SLOTS`, `heads`) to the exact values used during C-JEPA training.
+
+---
+
+### 3. Complete Working Pipeline Commands
+
+#### Step 1: Install Third-Party Dependencies & Patch `nerv`
+```bash
+conda activate cjepa
+cd "$HOME/Downloads/cjepa/src/third_party"
+
+rm -rf stable-pretraining stable-worldmodel nerv
+
+git clone https://github.com/galilai-group/stable-pretraining.git
+cd stable-pretraining && git checkout 92b584174e48a43644ac747a85db8e5599043a1d
+pip install -e . --no-deps && cd ..
+
+git clone https://github.com/galilai-group/stable-worldmodel.git
+cd stable-worldmodel && git checkout 221ac820a1adea75bed99df45ab592bb5f42306c
+pip install -e . --no-deps && cd ..
+
+git clone https://github.com/Wuziyi616/nerv.git
+cd nerv && git checkout v0.1.0
+pip install -e . --no-deps && cd "$HOME/Downloads/cjepa"
+
+cp src/custom_codes/misc.py src/third_party/nerv/nerv/utils/misc.py
+```
+
+#### Step 2: Extract VideoSAUR Slots (100k Checkpoint)
+```bash
+conda activate cjepa
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+cd "$HOME/Downloads/cjepa"
+
+OUT="$HOME/Downloads/pendulum_output"
+RAW="$OUT/pendulum-cjepa-3k-new"
+ROOT="$HOME/.stable_worldmodel"
+
+export WEIGHT="$OUT/checkpoint-archive/pendulum-ft-videosaur-20261022-201603/step=100000.ckpt"
+export SAVE_DIR="$OUT/extraction/pendulum_videosaur_4slots.pkl"
+
+mkdir -p "$ROOT/pendulum_train" "$ROOT/pendulum_val" "$(dirname "$SAVE_DIR")"
+ln -sfn "$RAW/videos/train" "$ROOT/pendulum_train/videos"
+ln -sfn "$RAW/videos/val" "$ROOT/pendulum_val/videos"
+
+PYTHONPATH=. python src/third_party/slotformer/base_slots/extract_videosaur.py \
+  --weight "$WEIGHT" \
+  --data_root "$ROOT" \
+  --save_path "$SAVE_DIR" \
+  --dataset pendulum \
+  --videosaur_config src/third_party/videosaur/configs/videosaur/pendulum_dinov2_hf.yml
+# Outputs: $OUT/extraction/pendulum_videosaur_4slots_step=100000.pkl
+```
+
+#### Step 3: Train C-JEPA Predictor (Wrapped in `tmux`)
+```bash
+mkdir -p "$HOME/Downloads/pendulum_output/logs"
+
+tmux new -s cjepa-train "
+conda activate cjepa
+cd \"$HOME/Downloads/cjepa\"
+export LD_LIBRARY_PATH=\"\$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/lib:\$CONDA_PREFIX/lib:\$LD_LIBRARY_PATH\"
+export WANDB_MODE=offline
+export PYTHONPATH=\"\$(pwd)\"
+export HYDRA_FULL_ERROR=1
+export SLOTPATH=\"\$HOME/Downloads/pendulum_output/extraction/pendulum_videosaur_4slots_step=100000.pkl\"
+
+python src/train/train_causalwm_from_clevrer_slot.py \
+    cache_dir=\"\$HOME/.stable_worldmodel\" \
+    output_model_name=\"pendulum_cjepa_100k\" \
+    dataset_name=\"pendulum\" \
+    num_workers=4 \
+    batch_size=32 \
+    trainer.max_epochs=30 \
+    num_masked_slots=1 \
+    predictor_lr=5e-4 \
+    dinowm.history_size=6 \
+    dinowm.num_preds=10 \
+    frameskip=1 \
+    videosaur.NUM_SLOTS=4 \
+    videosaur.SLOT_DIM=128 \
+    predictor.heads=8 \
+    \"embedding_dir='\${SLOTPATH}'\" 2>&1 | tee \"\$HOME/Downloads/pendulum_output/logs/cjepa_100k.log\"; exec bash"
+```
+
+#### Step 4: Slice Slots (`160 -> 128`) & Rollout Future Slots (`128 -> 160`)
+```bash
+conda activate cjepa
+cd "$HOME/Downloads/cjepa"
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+export WANDB_MODE=offline
+export PYTHONPATH="$(pwd)"
+
+python -c "
+import pickle
+src = '$HOME/Downloads/pendulum_output/extraction/pendulum_videosaur_4slots_step=100000.pkl'
+dst = '$HOME/Downloads/pendulum_output/extraction/pendulum_videosaur_4slots_100k_obs128.pkl'
+with open(src, 'rb') as f:
+    d = pickle.load(f)
+d_128 = {split: {k: v[:128] for k, v in vids.items()} for split, vids in d.items()}
+with open(dst, 'wb') as f:
+    pickle.dump(d_128, f)
+"
+
+# Replace epoch_4 with epoch_30 when using a full 30-epoch run
+export CKPTPATH="$HOME/.stable_worldmodel/pendulum_cjepa_100k_epoch_4_predictor.ckpt"
+export SLOTPATH="$HOME/Downloads/pendulum_output/extraction/pendulum_videosaur_4slots_100k_obs128.pkl"
+
+python src/train/train_causalwm_from_clevrer_slot.py \
+    rollout.rollout_only=true \
+    "rollout.rollout_checkpoint='${CKPTPATH}'" \
+    rollout.rollout_batch_size=64 \
+    cache_dir="$HOME/.stable_worldmodel" \
+    dataset_name="pendulum" \
+    num_workers=4 \
+    batch_size=32 \
+    dinowm.history_size=6 \
+    dinowm.num_preds=10 \
+    frameskip=1 \
+    videosaur.NUM_SLOTS=4 \
+    videosaur.SLOT_DIM=128 \
+    predictor.heads=8 \
+    predictor_lr=5e-4 \
+    num_masked_slots=1 \
+    "embedding_dir='${SLOTPATH}'"
+```
+
+#### Step 5: Convert Pendulum VQA Schema, Build Vocab, & Generate ALOE Config
+```bash
+python - <<'PY'
+import json, os, shutil
+from pathlib import Path
+
+home = Path.home()
+raw_dir = home / "Downloads/pendulum_output/pendulum-cjepa-3k-new"
+aloe_data_root = home / "Downloads/pendulum_output/aloe_data"
+(aloe_data_root / "questions").mkdir(parents=True, exist_ok=True)
+
+q_words, a_answers = set(), set()
+max_q_len = max_c_len = 0
+
+def tok(s):
+    return [w for w in s.lower().replace('?', '').split(' ') if w]
+
+video_fn2path = {"train": {}, "val": {}, "test": {}}
+
+for split in ["train", "val"]:
+    with open(raw_dir / "questions" / f"questions_{split}.json") as f:
+        raw = json.load(f)
+    scenes = raw["scene_annotation"] if isinstance(raw, dict) else raw
+
+    out_scenes = []
+    for scene in scenes:
+        vid_fn = os.path.basename(scene["video_filename"])
+        scene_idx = int(vid_fn.split("_")[1].split(".")[0])
+        video_fn2path[split][vid_fn] = str(raw_dir / "videos" / split / vid_fn)
+
+        out_qs = []
+        for q in scene["questions"]:
+            qtype, q_str = q["question_type"], q["question"]
+            q_tokens = tok(q_str)
+            q_words.update(q_tokens)
+            max_q_len = max(max_q_len, len(q_tokens))
+
+            if qtype == "descriptive":
+                ans = q["answer"]
+                ans = str(q["choices"][ans]) if ("choices" in q and isinstance(ans, int)) else str(ans)
+                a_answers.add(ans)
+                out_qs.append({
+                    "question_id": q["question_id"],
+                    "question_type": "descriptive",
+                    "question": q_str,
+                    "answer": ans,
+                })
+            else:
+                ans_idx = int(q["answer"])
+                choices_out = []
+                for cid, c_str in enumerate(q["choices"]):
+                    c_str = str(c_str)
+                    c_tokens = tok(c_str)
+                    q_words.update(c_tokens)
+                    max_c_len = max(max_c_len, len(c_tokens))
+                    choices_out.append({
+                        "choice_id": cid,
+                        "choice": c_str,
+                        "answer": "correct" if cid == ans_idx else "wrong",
+                    })
+                out_qs.append({
+                    "question_id": q["question_id"],
+                    "question_type": qtype,
+                    "question": q_str,
+                    "choices": choices_out,
+                })
+
+        out_scenes.append({"scene_index": scene_idx, "video_filename": vid_fn, "questions": out_qs})
+
+    with open(aloe_data_root / "questions" / f"{split}.json", "w") as f:
+        json.dump(out_scenes, f)
+
+q_vocab = {"PAD": 0}
+for w in sorted(q_words):
+    if w not in q_vocab:
+        q_vocab[w] = len(q_vocab)
+a_vocab = {a: i for i, a in enumerate(sorted(a_answers))}
+
+vocab_path = aloe_data_root / "pendulum_vocab.json"
+with open(vocab_path, "w") as f:
+    json.dump({"q_vocab": q_vocab, "a_vocab": a_vocab}, f, indent=2)
+
+cache_file = home / "Downloads/cjepa/src/third_party/slotformer/clevrer_vqa/datasets/cache/CLEVRER_video_fn2video_path.json"
+backup_file = cache_file.with_suffix(".json.bak")
+if cache_file.exists() and not backup_file.exists():
+    shutil.copy2(cache_file, backup_file)
+with open(cache_file, "w") as f:
+    json.dump(video_fn2path, f)
+
+q_pad, c_pad = max_q_len + 4, max_c_len + 4
+cfg_path = home / "Downloads/cjepa/src/third_party/slotformer/clevrer_vqa/configs/aloe_pendulum_params_rollout.py"
+cfg_path.write_text(f"""import os
+from nerv.training import BaseParams
+
+class SlotFormerParams(BaseParams):
+    project = 'SlotFormer_Pendulum'
+    gpus = 1
+    max_epochs = 100
+    eval_interval = 5
+    save_epoch_end = True
+    n_samples = 5
+    lr = 1e-3
+    warmup_steps_pct = 0.1
+
+    dataset = 'clevrer_slots'
+    data_root = '{aloe_data_root}'
+    slots_root = '{home}/Downloads/pendulum_output/extraction/rollout_pendulum_videosaur_4slots_100k_obs128_lr0.0005_mask1.pkl'
+    vocab_file = '{vocab_path}'
+    n_sample_frames = 25
+    slot_size = 128
+    max_n_objects = 3  # MUST BE NUM_SLOTS - 1
+    max_question_len = {q_pad}
+    max_choice_len = {c_pad}
+    shuffle_obj = False
+    train_batch_size = 96
+    val_batch_size = train_batch_size * 2
+    num_workers = 4
+
+    model = 'CLEVRERAloe'
+    transformer_dict = dict(
+        input_len=(max_n_objects + 1) * n_sample_frames + max_question_len + max_choice_len,
+        input_dim=16,
+        pos_enc='learnable',
+        num_layers=12,
+        num_heads=8,
+        ffn_dim=512,
+        norm_first=True,
+        cls_mlp_size=128,
+    )
+    vision_dict = dict(vision_dim=slot_size)
+    loss_dict = dict(use_mask_obj_loss=False)
+    cls_answer_loss_w = 1.
+    mc_answer_loss_w = 1.
+    mask_obj_loss_w = 0.01
+""")
+PY
+```
+
+#### Step 6: Train & Evaluate ALOE VQA
+```bash
+mkdir -p "$HOME/Downloads/pendulum_output/aloe_runs" "$HOME/Downloads/pendulum_output/logs"
+
+tmux new -s aloe-pendulum "
+conda activate cjepa
+cd \"$HOME/Downloads/cjepa\"
+export LD_LIBRARY_PATH=\"\$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/lib:\$CONDA_PREFIX/lib:\$LD_LIBRARY_PATH\"
+export WANDB_MODE=offline
+export PYTHONPATH=\"\$(pwd):\$(pwd)/src/third_party/slotformer\"
+
+CUDA_VISIBLE_DEVICES=0 python src/aloe_train.py \
+  --task clevrer_vqa \
+  --params src/third_party/slotformer/clevrer_vqa/configs/aloe_pendulum_params_rollout.py \
+  --exp_name aloe_pendulum_cjepa100k_ep4 \
+  --out_dir \"\$HOME/Downloads/pendulum_output/aloe_runs\" \
+  --fp16 --cudnn 2>&1 | tee \"\$HOME/Downloads/pendulum_output/logs/aloe_pendulum.log\"; exec bash"
+```
