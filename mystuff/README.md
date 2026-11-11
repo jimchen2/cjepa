@@ -34,3 +34,24 @@ Vocab saved: 402 question tokens, 23 descriptive answer classes
 Max question len: 26, Max choice len: 17
 Wrote ALOE config to: /home/jichen/Downloads/cjepa/src/third_party/slotformer/clevrer_vqa/configs/aloe_pendulum_params_rollout.py
 (cjepa) jichen@uark.edu@eecs-s-sail2025:~/Downloads/cjepa$ 
+
+
+
+
+conda activate cjepa
+cd "$HOME/Downloads/cjepa"
+
+cp src/custom_codes/misc.py src/third_party/nerv/nerv/utils/misc.py
+mkdir -p "$HOME/Downloads/pendulum_output/aloe_runs" "$HOME/Downloads/pendulum_output/logs"
+
+tmux new -s aloe-pendulum "
+export LD_LIBRARY_PATH=\"$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH\"
+export WANDB_MODE=offline
+export PYTHONPATH=\"$(pwd):$(pwd)/src/third_party/slotformer\"
+
+CUDA_VISIBLE_DEVICES=0 python src/aloe_train.py \
+  --task clevrer_vqa \
+  --params src/third_party/slotformer/clevrer_vqa/configs/aloe_pendulum_params_rollout.py \
+  --exp_name aloe_pendulum_cjepa100k_ep4 \
+  --out_dir \"$HOME/Downloads/pendulum_output/aloe_runs\" \
+  --fp16 --cudnn 2>&1 | tee \"$HOME/Downloads/pendulum_output/logs/aloe_pendulum.log\"; exec bash"
